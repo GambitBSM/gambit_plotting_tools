@@ -1,2 +1,3 @@
-# gambit_plotting_tools
-Plotting tools for GAMBIT
+# GAMBIT plotting tools
+
+A repo for developing a collection of plotting tools for GAMBIT work. 
