@@ -3,7 +3,7 @@
 A repo for developing a collection of Python plotting tools for GAMBIT work. 
 
 
-## Some current working examples:
+## Current working examples
 
 - Make a single 2D profile likelihood plot from the data in the hdf5 file `example_data/samples_run1.hdf5`
   ```terminal
