@@ -5,6 +5,8 @@ A repo for developing a collection of Python plotting tools for GAMBIT work.
 
 ## Current working examples
 
+### 2D profile likelihood plots
+
 - Make a single 2D profile likelihood plot from the data in the hdf5 file `example_data/samples_run1.hdf5`
   ```terminal
   python example_2D_profile_like_hdf5.py
@@ -20,3 +22,9 @@ A repo for developing a collection of Python plotting tools for GAMBIT work.
   python example_2D_profile_like_ascii.py
   ```
 
+### 2D posterior plots
+
+- Make a single 2D posterior plot from the data in the hdf5 file `example_data/samples_multinest.hdf5`
+  ```terminal
+  python example_2D_posterior_hdf5.py
+  ```

@@ -1,9 +1,8 @@
+from copy import deepcopy
 import numpy as np
 import matplotlib.pyplot as plt
-from copy import deepcopy
 
 import plot_utils
-import gambit_colormaps
 import gambit_plot_settings
 
 
@@ -103,6 +102,7 @@ for z_key in z_keys:
                 plot_likelihood_ratio=True,
                 contour_levels=likelihood_ratio_contour_values,
                 z_fill_value = -1*np.finfo(float).max,
+                add_max_likelihood_marker = True,
                 plot_settings=plot_settings,
             )
 

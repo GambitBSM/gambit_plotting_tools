@@ -51,11 +51,17 @@ plot_settings = {
     "contour_color": "white",
     "contour_linestyle": "solid",
 
-    "bestfit_marker": "*",
-    "bestfit_marker_size": 100,
-    "bestfit_marker_color": "white",
-    "bestfit_marker_edgecolor": "black",
-    "bestfit_marker_linewidth": 1.2,
+    "max_likelihood_marker": "*",
+    "max_likelihood_marker_size": 100,
+    "max_likelihood_marker_color": "white",
+    "max_likelihood_marker_edgecolor": "black",
+    "max_likelihood_marker_linewidth": 1.2,
+
+    "posterior_mean_marker": "o",
+    "posterior_mean_marker_size": 40,
+    "posterior_mean_marker_color": "white",
+    "posterior_mean_marker_edgecolor": "black",
+    "posterior_mean_marker_linewidth": 1.2,
 
     "colorbar_width": "6.25%",
     "colorbar_height": "92.5%",
