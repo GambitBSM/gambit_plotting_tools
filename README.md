@@ -11,7 +11,10 @@ A repo for developing a collection of Python plotting tools for GAMBIT work.
   ```terminal
   python example_2D_profile_like_hdf5.py
   ```
-
+  This should give a plot looking like this:
+  
+  <img src="example_plots/2D_profile__mu__sigma__LogLike.png" alt="2D profile likelihood example plot" width="500"/>
+  
 - Make multiple 2D profile likelihood plots in one go, combining the data from the hdf5 files `example_data/samples_run1.hdf5` and `example_data/samples_run2.hdf5`
   ```terminal
   python example_2D_profile_like_hdf5_multiple.py
@@ -28,3 +31,6 @@ A repo for developing a collection of Python plotting tools for GAMBIT work.
   ```terminal
   python example_2D_posterior_hdf5.py
   ```
+  This should give a plot looking like this:
+  
+  <img src="example_plots/2D_posterior__mu__sigma.png" alt="2D posterior example plot" width="500"/>
