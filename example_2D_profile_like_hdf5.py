@@ -54,7 +54,6 @@ xy_bins = (100, 100)
 
 # Load default plot settings (and make adjustments if necessary)
 plot_settings = deepcopy(gambit_plot_settings.plot_settings)
-plot_settings["interpolation"] = "none"
 
 # If variable bounds are not specified in dataset_bounds, use the full range from the data
 x_bounds = dataset_bounds.get(x_key, [np.min(data[x_key]), np.max(data[x_key])])
