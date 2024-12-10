@@ -583,23 +583,23 @@ def plot_1d_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
     plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
     plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="step", color=plot_settings["1D_posterior_color"])
 
-    # # Draw credible region lines?
-    # line_y_values = []
-    # if len(credible_regions) > 0:
+    # Draw credible region lines?
+    line_y_values = []
+    if len(credible_regions) > 0:
 
-    #     # For each requested CR contour, find the posterior 
-    #     # density height at which to draw the contour. 
-    #     sorted_hist = np.sort(histogram.ravel())[::-1]
-    #     cumulative_sum = np.cumsum(sorted_hist)
-    #     normalized_cumulative_sum = cumulative_sum / cumulative_sum[-1]
-    #     for cr in credible_regions:
-    #         contour_levels.append(sorted_hist[np.searchsorted(normalized_cumulative_sum, cr)])
+        # For each requested CR line, find the posterior 
+        # density height at which to draw the line. 
+        sorted_hist = np.sort(y_data)[::-1]
+        cumulative_sum = np.cumsum(sorted_hist)
+        normalized_cumulative_sum = cumulative_sum / cumulative_sum[-1]
+        for cr in credible_regions:
+            line_y_values.append(sorted_hist[np.searchsorted(normalized_cumulative_sum, cr)])
 
-    #     contour_levels.sort()
+        line_y_values.sort()
 
-    #     # Draw the contours
-    #     ax.contour(X, Y, histogram.T, contour_levels, colors=plot_settings["contour_color"], 
-    #                linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), linestyles=plot_settings["contour_linestyle"])
+        # Draw the lines
+        for line_y_val in line_y_values:
+            ax.plot([x_min, x_max], [line_y_val, line_y_val], color="black", linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
 
     # Add marker at the mean posterior point
     if add_mean_posterior_marker:
