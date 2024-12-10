@@ -531,6 +531,7 @@ def plot_1d_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
                       x_label: str, n_bins: tuple, x_bounds = None, 
                       credible_regions = [], plot_relative_probability = True, 
                       add_mean_posterior_marker = True,
+                      shaded_credible_region_bands = True,
                       plot_settings = gambit_plot_settings.plot_settings) -> None:
 
     # Sanity checks
@@ -598,6 +599,10 @@ def plot_1d_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
             ax.text(0.06, line_y_val, cr_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"], 
                     color=plot_settings["1D_posterior_color"], transform = ax.transAxes)
 
+            if shaded_credible_region_bands:
+                new_y_data = deepcopy(y_data)
+                new_y_data[new_y_data < line_y_val] = 0.0
+                plt.hist(x_edges[:-1], n_bins, weights=new_y_data, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
 
     # Add marker at the mean posterior point
     if add_mean_posterior_marker:

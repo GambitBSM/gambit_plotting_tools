@@ -51,6 +51,7 @@ x_bins = 80
 
 # Load default plot settings (and make adjustments if necessary)
 plot_settings = deepcopy(gambit_plot_settings.plot_settings)
+plot_settings["1D_posterior_color"] = "purple"
 
 # If variable bounds are not specified in dataset_bounds, use the full range from the data
 x_bounds = dataset_bounds.get(x_key, [np.min(data[x_key]), np.max(data[x_key])])
@@ -68,6 +69,7 @@ fig, ax = plot_utils.plot_1d_posterior(
     credible_regions=credible_regions,
     plot_relative_probability=True,
     add_mean_posterior_marker=True,
+    shaded_credible_region_bands=True,
     plot_settings=plot_settings,
 )
 
