@@ -9,8 +9,12 @@ plot_settings = {
 
     "framewidth": 1.2,
     "framecolor_plot": "white",
-    "framecolor_colorbar": "black",
     "facecolor_plot": "0.5",
+    "framecolor_colorbar": "black",
+
+    "framewidth_1D": 1.2,
+    "framecolor_plot_1D": "black",
+    "facecolor_plot_1D": "white",
 
     "figwidth": 4.92,  # inches
     "figheight": 4.00, # inches
@@ -22,8 +26,13 @@ plot_settings = {
 
     "fontsize": 14,
 
+    "1D_posterior_color": "blue",
+    "1D_posterior_fill_alpha": 0.2,
+
     "major_ticks_color": "white",
     "minor_ticks_color": "white",
+    "major_ticks_color_1D": "black",
+    "minor_ticks_color_1D": "black",
 
     "major_ticks_bottom": True,
     "major_ticks_top": True,

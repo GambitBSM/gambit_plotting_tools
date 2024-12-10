@@ -168,6 +168,76 @@ def read_hdf5_datasets(hdf5_file_and_group_names, requested_datasets, filter_inv
     return data
 
 
+def create_empty_figure_1D(xy_bounds, plot_settings):
+
+    # Get bounds in x and y
+    x_min, x_max = xy_bounds[0]
+    y_min, y_max = xy_bounds[1]
+
+    figwidth = plot_settings["figwidth"]
+    figheight = plot_settings["figheight"]
+    figheight_figwidth_ratio = figheight / figwidth
+    fig = plt.figure(figsize=(figwidth, figheight))
+
+    pad_left = plot_settings["pad_left"]
+    pad_right = plot_settings["pad_right"]
+    pad_bottom = plot_settings["pad_bottom"]
+    pad_top = plot_settings["pad_top"]
+
+    plot_width = 1.0 - pad_left - pad_right
+    plot_height = 1.0 - pad_bottom - pad_top
+
+    # Add axes 
+    left = pad_left
+    bottom = pad_bottom
+    ax = fig.add_axes((left, bottom, plot_width, plot_height), frame_on=True)
+    ax.set_facecolor(plot_settings["facecolor_plot_1D"])
+
+    # Set frame color and width
+    for spine in ax.spines.values():
+        spine.set_edgecolor(plot_settings["framecolor_plot_1D"])
+        spine.set_linewidth(plot_settings["framewidth_1D"])
+
+    # Axis ranges
+    plt.xlim([x_min, x_max])
+    plt.ylim([y_min, y_max])
+
+    # Minor ticks
+    ax.xaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(plot_settings["n_minor_ticks_per_major_tick"] + 1))
+    ax.yaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(plot_settings["n_minor_ticks_per_major_tick"] + 1))
+
+    # Tick parameters
+    major_ticks_color = plot_settings["major_ticks_color_1D"]
+    minor_ticks_color = plot_settings["minor_ticks_color_1D"]
+    major_ticks_width = plot_settings["major_ticks_width"]
+    minor_ticks_width = plot_settings["minor_ticks_width"]
+    major_ticks_length = plot_settings["major_ticks_length"]
+    minor_ticks_length = plot_settings["minor_ticks_length"]
+    major_ticks_pad = plot_settings["major_ticks_pad"]
+    minor_ticks_pad = plot_settings["minor_ticks_pad"]
+
+    major_ticks_bottom = plot_settings["major_ticks_bottom"]
+    major_ticks_top = plot_settings["major_ticks_top"]
+    major_ticks_left = plot_settings["major_ticks_left"]
+    major_ticks_right = plot_settings["major_ticks_right"]
+    minor_ticks_bottom = plot_settings["minor_ticks_bottom"]
+    minor_ticks_top = plot_settings["minor_ticks_top"]
+    minor_ticks_left = plot_settings["minor_ticks_left"]
+    minor_ticks_right = plot_settings["minor_ticks_right"]
+
+    plt.tick_params(which="major", axis="x",direction="in", color=major_ticks_color, width=major_ticks_width, length=major_ticks_length, pad=major_ticks_pad, bottom=major_ticks_bottom, top=major_ticks_top)
+    plt.tick_params(which="minor", axis="x",direction="in", color=minor_ticks_color, width=minor_ticks_width, length=minor_ticks_length,  pad=minor_ticks_pad, bottom=minor_ticks_bottom, top=minor_ticks_top)
+    plt.tick_params(which="major", axis="y",direction="in", color=major_ticks_color, width=major_ticks_width, length=major_ticks_length, pad=major_ticks_pad, left=major_ticks_left, right=major_ticks_right)
+    plt.tick_params(which="minor", axis="y",direction="in", color=minor_ticks_color, width=minor_ticks_width, length=minor_ticks_length,  pad=minor_ticks_pad, left=minor_ticks_left, right=minor_ticks_right)
+
+    plt.ticklabel_format(axis="both", style="sci", scilimits=(-3,3))
+
+    ax.xaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
+    ax.yaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
+
+    return fig, ax
+
+
 
 def create_empty_figure(xy_bounds, plot_settings):
 
@@ -457,6 +527,92 @@ def plot_2d_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
 
 
 
+def plot_1d_posterior(x_data: np.ndarray, posterior_weights: np.ndarray, 
+                      x_label: str, n_bins: tuple, x_bounds = None, 
+                      credible_regions = [], plot_relative_probability = True, 
+                      add_mean_posterior_marker = True,
+                      plot_settings = gambit_plot_settings.plot_settings) -> None:
+
+    # Sanity checks
+    if not (x_data.shape == posterior_weights.shape):
+        raise Exception("All input arrays must have the same shape.")
+
+    if not (len(x_data.shape) == len(posterior_weights.shape) == 1):
+        raise Exception("Input arrays must be one-dimensional.")
+
+    # Number of points
+    n_pts = x_data.shape[0]
+
+    # Get plot bounds in x
+    if x_bounds is None:
+        x_bounds = (np.min(x_data), np.max(x_data))
+    x_bounds[0] -= np.finfo(float).eps
+    x_bounds[1] += np.finfo(float).eps
+    x_min, x_max = x_bounds
+
+    # Created weighted 1D histogram
+    histogram, x_edges = np.histogram(x_data, bins=n_bins, range=x_bounds, weights=posterior_weights)
+    x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
+
+    # Set y bound
+    y_min = 0.0
+    y_max = 1.0
+    if not plot_relative_probability:
+        y_max = np.max(histogram)
+
+    # Create an empty figure using our plot settings
+    xy_bounds = ([x_min, x_max], [y_min, y_max])
+    fig, ax = create_empty_figure_1D(xy_bounds, plot_settings)
+
+    # Axis labels
+    y_label = "Posterior probability"
+    if plot_relative_probability:
+        y_label = "Relative probability $P/P_{\\mathrm{max}}$"
+
+    fontsize = plot_settings["fontsize"]
+    plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
+    plt.ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
+
+    # Make a histogram of the 1D posterior distribution
+    y_data = histogram
+    if plot_relative_probability:
+        y_data = y_data / np.max(y_data)
+
+    plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
+    plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="step", color=plot_settings["1D_posterior_color"])
+
+    # # Draw credible region lines?
+    # line_y_values = []
+    # if len(credible_regions) > 0:
+
+    #     # For each requested CR contour, find the posterior 
+    #     # density height at which to draw the contour. 
+    #     sorted_hist = np.sort(histogram.ravel())[::-1]
+    #     cumulative_sum = np.cumsum(sorted_hist)
+    #     normalized_cumulative_sum = cumulative_sum / cumulative_sum[-1]
+    #     for cr in credible_regions:
+    #         contour_levels.append(sorted_hist[np.searchsorted(normalized_cumulative_sum, cr)])
+
+    #     contour_levels.sort()
+
+    #     # Draw the contours
+    #     ax.contour(X, Y, histogram.T, contour_levels, colors=plot_settings["contour_color"], 
+    #                linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), linestyles=plot_settings["contour_linestyle"])
+
+    # Add marker at the mean posterior point
+    if add_mean_posterior_marker:
+        x_mean = np.average(x_data, weights=posterior_weights)
+        y_mean = 0.0
+        ax.scatter(x_mean, y_mean, marker=plot_settings["posterior_mean_marker"], s=plot_settings["posterior_mean_marker_size"], c=plot_settings["posterior_mean_marker_color"],
+                   edgecolor=plot_settings["posterior_mean_marker_edgecolor"], linewidth=plot_settings["posterior_mean_marker_linewidth"], zorder=100, clip_on=False)
+
+    # Return plot
+    return fig, ax
+
+
+
 def plot_2d_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights: np.ndarray, 
                       labels: tuple, n_bins: tuple, xy_bounds = None, 
                       credible_regions = [], plot_relative_probability = True, 
@@ -564,5 +720,6 @@ def plot_2d_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
 
     # Return plot
     return fig, ax, cbar_ax
+
 
 

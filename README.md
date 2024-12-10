@@ -25,6 +25,13 @@ A repo for developing a collection of Python plotting tools for GAMBIT work.
   python example_2D_profile_like_ascii.py
   ```
 
+### 1D posterior plots
+
+- Make a single 1D posterior plot from the data in the hdf5 file `example_data/samples_multinest.hdf5`
+  ```terminal
+  python example_1D_posterior_hdf5.py
+  ```
+
 ### 2D posterior plots
 
 - Make a single 2D posterior plot from the data in the hdf5 file `example_data/samples_multinest.hdf5`
