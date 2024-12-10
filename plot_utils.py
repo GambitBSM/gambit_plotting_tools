@@ -584,7 +584,6 @@ def plot_1d_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
     plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="step", color=plot_settings["1D_posterior_color"])
 
     # Draw credible region lines?
-    line_y_values = []
     if len(credible_regions) > 0:
 
         # For each requested CR line, find the posterior 
@@ -593,13 +592,12 @@ def plot_1d_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
         cumulative_sum = np.cumsum(sorted_hist)
         normalized_cumulative_sum = cumulative_sum / cumulative_sum[-1]
         for cr in credible_regions:
-            line_y_values.append(sorted_hist[np.searchsorted(normalized_cumulative_sum, cr)])
+            line_y_val = sorted_hist[np.searchsorted(normalized_cumulative_sum, cr)]
+            ax.plot([x_min, x_max], [line_y_val, line_y_val], color=plot_settings["1D_posterior_color"], linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
+            cr_text = f"${100*cr:.1f}\\%\\,$CR"
+            ax.text(0.06, line_y_val, cr_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"], 
+                    color=plot_settings["1D_posterior_color"], transform = ax.transAxes)
 
-        line_y_values.sort()
-
-        # Draw the lines
-        for line_y_val in line_y_values:
-            ax.plot([x_min, x_max], [line_y_val, line_y_val], color="black", linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
 
     # Add marker at the mean posterior point
     if add_mean_posterior_marker:
