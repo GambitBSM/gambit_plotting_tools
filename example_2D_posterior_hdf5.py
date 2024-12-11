@@ -69,7 +69,7 @@ y_label = plot_labels.get(y_key, y_key)
 labels = (x_label, y_label)
 
 # Create 2D posterior figure
-fig, ax, cbar_ax = plot_utils.plot_2d_posterior(
+fig, ax, cbar_ax = plot_utils.plot_2D_posterior(
     data[x_key], 
     data[y_key], 
     data[posterior_weights_key], 

@@ -5,6 +5,17 @@ A repo for developing a collection of Python plotting tools for GAMBIT work.
 
 ## Current working examples
 
+### 1D profile likelihood plots
+
+- Make a single 1D profile likelihood plot from the data in the hdf5 file `example_data/samples_run1.hdf5`
+  ```terminal
+  python example_1D_profile_like_hdf5.py
+  ```
+  This should give a plot looking like this:
+  
+  <img src="example_plots/1D_profile__sigma.png" alt="1D profile likelihood example plot" width="500"/>
+
+
 ### 2D profile likelihood plots
 
 - Make a single 2D profile likelihood plot from the data in the hdf5 file `example_data/samples_run1.hdf5`

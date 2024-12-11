@@ -168,6 +168,59 @@ def read_hdf5_datasets(hdf5_file_and_group_names, requested_datasets, filter_inv
     return data
 
 
+
+def line_intersection(p1, p2, q1, q2):
+    """ Return the intersection of line segment p1 -> p2 with q1 -> q2 or None if there's no intersection """
+
+    p = np.array(p1)
+    r = np.array(p2) - np.array(p1)
+    q = np.array(q1)
+    s = np.array(q2) - np.array(q1)
+
+    cross_rs = np.cross(r, s)
+    if cross_rs == 0:
+        return None  # Lines are parallel or collinear
+
+    t = np.cross(q - p, s) / cross_rs
+    u = np.cross(q - p, r) / cross_rs
+
+    intersection_point = None
+    if (0 <= t <= 1) and (0 <= u <= 1):
+        intersection_point = p + t * r
+
+    return intersection_point
+
+
+
+def get_intersection_points_from_lines(line1, line2):
+
+    # Get the Path objects for each line
+    path1 = matplotlib.path.Path(np.column_stack([line1.get_xdata(), line1.get_ydata()]))
+    path2 = matplotlib.path.Path(np.column_stack([line2.get_xdata(), line2.get_ydata()]))
+
+    # Vertices of the paths
+    vertices1 = path1.vertices
+    vertices2 = path2.vertices
+
+    # Find intersection points
+    intersection_points_upcrossings = []
+    intersection_points_downcrossings = []
+    for i in range(len(vertices1) - 1):
+        p1 = vertices1[i]
+        p2 = vertices1[i + 1]
+        for j in range(len(vertices2) - 1):
+            q1 = vertices2[j]
+            q2 = vertices2[j + 1]
+            intersect = line_intersection(p1, p2, q1, q2)
+            if intersect is not None:
+                if (p1[1] <= q1[1]) and (p2[1] >= q2[1]):
+                    intersection_points_upcrossings.append(intersect)
+                if (p1[1] >= q1[1]) and (p2[1] <= q2[1]):
+                    intersection_points_downcrossings.append(intersect)
+    return intersection_points_upcrossings, intersection_points_downcrossings
+
+
+
 def create_empty_figure_1D(xy_bounds, plot_settings):
 
     # Get bounds in x and y
@@ -239,7 +292,7 @@ def create_empty_figure_1D(xy_bounds, plot_settings):
 
 
 
-def create_empty_figure(xy_bounds, plot_settings):
+def create_empty_figure_2D(xy_bounds, plot_settings):
 
     # Get bounds in x and y
     x_min, x_max = xy_bounds[0]
@@ -310,7 +363,82 @@ def create_empty_figure(xy_bounds, plot_settings):
 
 
 
-def bin_and_profile_2d(x_data, y_data, z_data, n_bins, xy_bounds, 
+def bin_and_profile_1D(x_data, y_data, n_bins, x_bounds, 
+                       already_sorted=False, 
+                       y_fill_value=-1*np.finfo(float).max):
+
+    # Number of points
+    n_pts = x_data.shape[0]
+
+    # Sort data?
+    if not already_sorted:
+        # Sort data according to y value, from highest to lowest
+        p = np.argsort(y_data)
+        p = p[::-1]
+        x_data = x_data[p]
+        y_data = y_data[p]
+
+    # Get bounds in x and y
+    x_min, x_max = x_bounds
+
+    # Binning of the x axis
+    # x_bin_width = (x_max - x_min) / float(n_bins)
+    # x_bin_limits = np.linspace(x_min, x_max, n_bins + 1)
+    # x_bin_centres = np.linspace(x_min + 0.5 * x_bin_width, x_max - 0.5 * x_bin_width, n_bins)
+    # x_bin_indices = np.digitize(x_data, x_bin_limits, right=False) - 1
+
+    x_bin_width = (x_max - x_min) / float(n_bins)
+    x_bin_limits_inner = np.linspace(x_min + 0.5 * x_bin_width, x_max - 0.5 * x_bin_width, n_bins)
+    x_bin_limits = np.array([x_min] + list(x_bin_limits_inner) + [x_max])
+
+    x_bin_centres = np.linspace(x_min, x_max, n_bins + 1)
+    x_bin_indices = np.digitize(x_data, x_bin_limits, right=False) - 1
+
+    # Determine the y value in each bin.
+    # 
+    # Since we have already sorted all the points from high to low
+    # y value, we can just set the y value for each bin using the first 
+    # point we encounter that belongs in that given x bin. All subsequent 
+    # points we find that belong in that bin we just skip past 
+    # (using the y_val_is_set check below). 
+
+    y_values = np.zeros(n_bins + 1)
+    y_val_is_set = np.array(y_values, dtype=bool)  # Every entry initialised to False
+
+    for i in range(n_pts):
+
+        x_bin_index = x_bin_indices[i]
+        y_values_index = x_bin_index
+
+        if (x_bin_index >= n_bins + 1):
+            continue
+
+        if y_val_is_set[y_values_index]:
+            continue
+
+        y_val = y_data[i]
+        y_values[y_values_index] = y_val
+        y_val_is_set[y_values_index] = True
+
+        if np.all(y_val_is_set):
+            break
+
+    # For the x bins where we don't have any points in plot_data, 
+    # we set the y value manually using y_fill_value
+    for y_values_index in range(y_values.shape[0]):
+            if not y_val_is_set[y_values_index]:
+                y_values[y_values_index] = y_fill_value
+
+    # # Fill array x_values
+    # x_values = np.zeros(n_bins)
+    # for x_bin_index, x_bin_centre in enumerate(x_bin_centres):
+    #     x_values[x_bin_index] = x_bin_centre
+
+    return x_bin_centres, y_values
+
+
+
+def bin_and_profile_2D(x_data, y_data, z_data, n_bins, xy_bounds, 
                        already_sorted=False, 
                        z_fill_value=-1*np.finfo(float).max):
 
@@ -346,7 +474,7 @@ def bin_and_profile_2d(x_data, y_data, z_data, n_bins, xy_bounds,
     x_bin_indices = np.digitize(x_data, x_bin_limits, right=False) - 1
     y_bin_indices = np.digitize(y_data, y_bin_limits, right=False) - 1
 
-    # Determine the z_value in each bin.
+    # Determine the z value in each bin.
     # 
     # Since we have already sorted all the points from high to low
     # z value, we can just set the z value for each bin using the first 
@@ -398,7 +526,184 @@ def bin_and_profile_2d(x_data, y_data, z_data, n_bins, xy_bounds,
 
 
 
-def plot_2d_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray, 
+def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray, 
+                    x_label: str, n_bins: tuple, x_bounds = None, 
+                    confidence_levels = [], y_fill_value = -1*np.finfo(float).max, 
+                    y_is_loglike = True, plot_likelihood_ratio = True,
+                    add_max_likelihood_marker = True,
+                    fill_color_below_graph = True,
+                    shaded_confidence_interval_bands=True,
+                    plot_settings = gambit_plot_settings.plot_settings) -> None:
+
+    # Sanity checks
+    if not (x_data.shape == y_data.shape):
+        raise Exception("All input arrays must have the same shape.")
+
+    if not (len(x_data.shape) == len(y_data.shape) == 1):
+        raise Exception("Input arrays must be one-dimensional.")
+
+    # Number of points
+    n_pts = x_data.shape[0]
+
+    # Sort data according to y value, from highest to lowest
+    p = np.argsort(y_data)
+    p = p[::-1]
+    x_data = x_data[p]
+    y_data = y_data[p]
+
+    # Get the highest and lowest z values
+    y_max = y_data[0]
+    y_min = y_data[-1]
+
+    # Get plot bounds in x
+    if x_bounds is None:
+        x_bounds = (np.min(x_data), np.max(x_data))
+    x_bounds[0] -= np.finfo(float).eps
+    x_bounds[1] += np.finfo(float).eps
+    x_min, x_max = x_bounds
+
+    # Use loglike difference
+    if y_is_loglike:
+        y_data = y_data - y_max
+        y_max = y_data[0]
+        y_min = y_data[-1]
+
+    # Bin and profile data
+    x_values, y_values = bin_and_profile_1D(x_data, y_data, 
+                                            n_bins, x_bounds,
+                                            already_sorted=True, 
+                                            y_fill_value=y_fill_value)
+
+    # Convert from lnL - lnL_max = ln(L/Lmax) to L/Lmax 
+    if y_is_loglike and plot_likelihood_ratio:
+        y_values = np.exp(y_values)
+
+
+    # Set y bound
+    y_min = np.min(y_values)
+    y_max = np.max(y_values)
+    if (y_is_loglike) and (not plot_likelihood_ratio):
+        y_min = 0.0
+        y_max = 6.0
+    if (y_is_loglike) and (plot_likelihood_ratio):
+        y_min = 0.0
+        y_max = 1.0
+
+    # Create an empty figure using our plot settings
+    xy_bounds = ([x_min, x_max], [y_min, y_max])
+    fig, ax = create_empty_figure_1D(xy_bounds, plot_settings)
+
+    # Axis labels
+    y_label = "Likelihood"
+    if (y_is_loglike) and (not plot_likelihood_ratio):
+        y_label = "$\\ln L   - \\ln L_\\mathrm{max}$"
+    if (y_is_loglike) and (plot_likelihood_ratio):
+        y_label = "$\\textrm{Profile likelihood ratio}$ $\\Lambda = L/L_\\mathrm{max}$"
+
+    fontsize = plot_settings["fontsize"]
+    plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
+    plt.ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
+
+    # Determine confidence level lines
+    cl_lines_y_vals = []
+    if len(confidence_levels) > 0:
+        cl_lines_y_vals = []
+        if (y_is_loglike) and (not plot_likelihood_ratio):
+            cl_lines_y_vals = get_1D_delta_loglike_levels(confidence_levels)
+        if (y_is_loglike) and (plot_likelihood_ratio):
+            cl_lines_y_vals = get_1D_likelihood_ratio_levels(confidence_levels)
+
+
+    # Make a 1D profile likelihood plot
+
+    # Fill?
+    if fill_color_below_graph:
+        plt.fill_between(
+                x=x_values, 
+                y1=y_values, 
+                color=plot_settings["1D_profile_likelihood_color"],
+                alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
+                linewidth=0.0)
+
+    main_graph, = plt.plot(x_values, y_values, linestyle="solid", color=plot_settings["1D_profile_likelihood_color"])
+    # DEBUG:
+    # main_graph, = plt.plot(x_values, y_values, linestyle="solid", color=plot_settings["1D_profile_likelihood_color"], linewidth=0.1)
+    # plt.plot(x_values, y_values, ".", color=plot_settings["1D_profile_likelihood_color"], linewidth=0.0)
+
+
+    # Add shaded confidence interval bands?
+    if shaded_confidence_interval_bands:
+
+        for cl_line_y_val in cl_lines_y_vals:
+
+            cl_line = matplotlib.lines.Line2D([x_min, x_max], [cl_line_y_val, cl_line_y_val])
+
+            ip_up, ip_dn = get_intersection_points_from_lines(main_graph, cl_line)
+
+            fill_starts_x = [ip[0] for ip in ip_up]
+            fill_ends_x = [ip[0] for ip in ip_dn]
+
+            fill_starts_y = [ip[1] for ip in ip_up]
+            fill_ends_y = [ip[1] for ip in ip_dn]
+
+            if y_values[0] > cl_line_y_val:
+                fill_starts_x = [x_min] + fill_starts_x 
+                fill_starts_y = [y_values[0]] + fill_starts_y 
+
+            if len(fill_starts_x) == len(fill_ends_x) + 1:
+                fill_ends_x = fill_ends_x + [x_max]
+                fill_ends_y = fill_ends_y + [y_values[-1]]
+
+            if len(fill_ends_x) == len(fill_starts_x) + 1:
+                fill_starts_x = [x_min] + fill_starts_x
+                fill_starts_y = [y_values[0]] + fill_starts_y
+
+            if len(fill_starts_x) != len(fill_ends_x):
+                raise Exception("The lists fill_starts_x and fill_ends_x have different lengths. This should not happen.")
+
+            for i in range(len(fill_starts_x)):
+                
+                x_start, x_end = fill_starts_x[i], fill_ends_x[i]
+                y_start, y_end = fill_starts_y[i], fill_ends_y[i]
+
+                use_x_values = np.array([x_start] + list(x_values[(x_values > x_start) & (x_values < x_end)]) + [x_end])
+                use_y_values = np.array([y_start] + list(y_values[(x_values > x_start) & (x_values < x_end)]) + [y_end])
+
+                plt.fill_between(
+                        x=use_x_values, 
+                        y1=use_y_values,
+                        y2=y_min,
+                        color=plot_settings["1D_profile_likelihood_color"],
+                        alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
+                        linewidth=0.0)
+
+
+    # Draw confidence level lines
+    if len(confidence_levels) > 0:
+
+        for i,cl in enumerate(confidence_levels):
+            cl_line_y_val = cl_lines_y_vals[i]
+            ax.plot([x_min, x_max], [cl_line_y_val, cl_line_y_val], color=plot_settings["1D_profile_likelihood_color"], linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
+            cl_text = f"${100*cl:.1f}\\%\\,$CL"
+            ax.text(0.06, cl_line_y_val, cl_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"], 
+                    color=plot_settings["1D_profile_likelihood_color"], transform = ax.transAxes)
+
+    # Add a star at the max-likelihood point
+    if (y_is_loglike and add_max_likelihood_marker):
+        max_like_index = np.argmax(y_data)
+        x_max_like = x_data[max_like_index]
+        ax.scatter(x_max_like, 0.0, marker=plot_settings["max_likelihood_marker"], s=plot_settings["max_likelihood_marker_size"], c=plot_settings["max_likelihood_marker_color"],
+                   edgecolor=plot_settings["max_likelihood_marker_edgecolor"], linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100, clip_on=False)
+
+    # Return plot
+    return fig, ax
+
+
+
+
+def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray, 
                     labels: tuple, n_bins: tuple, xy_bounds = None, 
                     contour_levels = [], z_fill_value = -1*np.finfo(float).max, 
                     z_is_loglike = True, plot_likelihood_ratio = True,
@@ -443,7 +748,7 @@ def plot_2d_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
         z_min = z_data[-1]
 
     # Bin and profile data
-    x_values, y_values, z_values = bin_and_profile_2d(x_data, y_data, z_data, 
+    x_values, y_values, z_values = bin_and_profile_2D(x_data, y_data, z_data, 
                                                       n_bins, xy_bounds,
                                                       already_sorted=True, 
                                                       z_fill_value=z_fill_value)
@@ -463,7 +768,7 @@ def plot_2d_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
         cmap_vmax = z_max
 
     # Create an empty figure using our plot settings
-    fig, ax = create_empty_figure(xy_bounds, plot_settings)
+    fig, ax = create_empty_figure_2D(xy_bounds, plot_settings)
 
     # Axis labels
     x_label = labels[0]
@@ -527,10 +832,11 @@ def plot_2d_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
 
 
 
-def plot_1d_posterior(x_data: np.ndarray, posterior_weights: np.ndarray, 
+def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray, 
                       x_label: str, n_bins: tuple, x_bounds = None, 
                       credible_regions = [], plot_relative_probability = True, 
                       add_mean_posterior_marker = True,
+                      fill_color_below_graph=False,
                       shaded_credible_region_bands = True,
                       plot_settings = gambit_plot_settings.plot_settings) -> None:
 
@@ -581,7 +887,8 @@ def plot_1d_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
     if plot_relative_probability:
         y_data = y_data / np.max(y_data)
 
-    plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
+    if fill_color_below_graph:
+        plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
     plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="step", color=plot_settings["1D_posterior_color"])
 
     # Draw credible region lines?
@@ -616,7 +923,7 @@ def plot_1d_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
 
 
 
-def plot_2d_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights: np.ndarray, 
+def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights: np.ndarray, 
                       labels: tuple, n_bins: tuple, xy_bounds = None, 
                       credible_regions = [], plot_relative_probability = True, 
                       add_mean_posterior_marker = True,
@@ -654,7 +961,7 @@ def plot_2d_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
         cmap_vmax = 1.0
 
     # Create an empty figure using our plot settings
-    fig, ax = create_empty_figure(xy_bounds, plot_settings)
+    fig, ax = create_empty_figure_2D(xy_bounds, plot_settings)
 
     # Axis labels
     x_label = labels[0]

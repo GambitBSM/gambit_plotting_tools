@@ -71,7 +71,7 @@ xy_bounds = (x_bounds, y_bounds)
 labels = (plot_labels[x_key], plot_labels[y_key], plot_labels[z_key])
 
 # Create 2D profile likelihood figure
-fig, ax, cbar_ax = plot_utils.plot_2d_profile(
+fig, ax, cbar_ax = plot_utils.plot_2D_profile(
     data[x_key], 
     data[y_key], 
     data[z_key], 

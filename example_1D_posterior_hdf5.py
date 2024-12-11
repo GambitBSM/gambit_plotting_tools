@@ -60,7 +60,7 @@ x_bounds = dataset_bounds.get(x_key, [np.min(data[x_key]), np.max(data[x_key])])
 x_label = plot_labels.get(x_key, x_key)
 
 # Create 1D posterior figure
-fig, ax = plot_utils.plot_1d_posterior(
+fig, ax = plot_utils.plot_1D_posterior(
     data[x_key], 
     data[posterior_weights_key], 
     x_label, 
@@ -69,6 +69,7 @@ fig, ax = plot_utils.plot_1d_posterior(
     credible_regions=credible_regions,
     plot_relative_probability=True,
     add_mean_posterior_marker=True,
+    fill_color_below_graph=False,
     shaded_credible_region_bands=True,
     plot_settings=plot_settings,
 )

@@ -29,6 +29,9 @@ plot_settings = {
     "1D_posterior_color": "blue",
     "1D_posterior_fill_alpha": 0.2,
 
+    "1D_profile_likelihood_color": "crimson",
+    "1D_profile_likelihood_fill_alpha": 0.2,
+
     "major_ticks_color": "white",
     "minor_ticks_color": "white",
     "major_ticks_color_1D": "black",

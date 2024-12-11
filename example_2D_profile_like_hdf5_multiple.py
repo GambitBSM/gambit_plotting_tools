@@ -91,7 +91,7 @@ for z_key in z_keys:
             plot_settings = deepcopy(gambit_plot_settings.plot_settings)
 
             # Create 2D profile likelihood figure
-            fig, ax, cbar_ax = plot_utils.plot_2d_profile(
+            fig, ax, cbar_ax = plot_utils.plot_2D_profile(
                 data[x_key], 
                 data[y_key], 
                 data[z_key], 
