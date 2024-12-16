@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser(
     formatter_class=argparse.RawTextHelpFormatter,
     epilog="""Example usage:
     python print_all_dataset_names.py path/to/my_file.hdf5 --ignore-endswith \"_isvalid\" --ignore-startswith \"metadata\"
+    python print_all_dataset_names.py path/to/my_file.hdf5 --include-contains \"primary_parameters\"
     """
 )
 
@@ -25,22 +26,30 @@ parser.add_argument(
     type=str, 
     nargs='*', 
     default=[], 
-    help="List of strings. Datasets with names beginning with a string in this list will not be printed. If not provided, defaults to an empty list."
+    help="List of strings. Datasets with names beginning with a string in this list will not be printed."
 )
 parser.add_argument(
     "--ignore-endswith",
     type=str, 
     nargs='*', 
     default=[], 
-    help="List of strings. Datasets with names ending on a string in this list will not be printed. If not provided, defaults to an empty list."
+    help="List of strings. Datasets with names ending on a string in this list will not be printed."
 )
 parser.add_argument(
     "--ignore-contains",
     type=str, 
     nargs='*', 
     default=[], 
-    help="List of strings. Datasets with names containing a string in this list will not be printed. If not provided, defaults to an empty list."
+    help="List of strings. Datasets with names containing a string in this list will not be printed."
 )
+parser.add_argument(
+    "--include-contains",
+    type=str, 
+    nargs='*', 
+    default=[], 
+    help="List of strings. If provided, only datasets whose names contain a string in this list will be printed."
+)
+
 
 args = parser.parse_args()
 
@@ -48,6 +57,7 @@ file_name = args.file_name
 ignore_startswith = args.ignore_startswith
 ignore_endswith = args.ignore_endswith
 ignore_contains = args.ignore_contains
+include_contains = args.include_contains
 
 
 #
@@ -59,6 +69,7 @@ with h5py.File(file_name, 'r') as file:
 
     def collect_datasets(name, obj):
         if isinstance(obj, h5py.Dataset):
+
             skip = False
             for ignored_start in ignore_startswith:
                 if name.startswith(ignored_start):
@@ -72,6 +83,11 @@ with h5py.File(file_name, 'r') as file:
             if not skip:
                 for ignored_substring in ignore_contains:
                     if ignored_substring in name:
+                        skip = True
+                        break
+            if not skip:
+                for included_substring in include_contains:
+                    if included_substring not in name:
                         skip = True
                         break
 
