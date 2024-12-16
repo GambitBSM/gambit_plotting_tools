@@ -67,12 +67,58 @@ There are also some scripts for other common tasks besides plotting.
   ```terminal
   python print_all_dataset_names.py example_data/samples_run1.hdf5 --ignore-startswith "metadata" --ignore-endswith "_isvalid"
   ```
+  This should give an output looking like this:
+  ```terminal
+  data/#NormalDist_parameters @NormalDist::primary_parameters::mu
+  data/#NormalDist_parameters @NormalDist::primary_parameters::sigma
+  data/#normaldist_loglike @ExampleBit_A::lnL_gaussian
+  data/LogLike
+  data/MPIrank
+  data/ModifiedLogLike
+  data/Runtime(ms) interloop
+  data/Runtime(ms) intraloop
+  data/Runtime(ms) totalloop
+  data/Runtime(ns) for #NormalDist_parameters @NormalDist::primary_parameters
+  data/Runtime(ns) for #normaldist_loglike @ExampleBit_A::lnL_gaussian
+  data/Suspicious Point Code
+  data/pointID
+  data/scanID
+  data/unitCubeParameters[0]
+  data/unitCubeParameters[1]
+  ```
 
 ### Get parameters of the highest-likelihood points
   - Read the `data` group in the hdf5 file `example_data/samples_run1.hdf5` and print the input parameters for the 3 highest-likelihood points
   ```terminal
   python print_high_loglike_points.py example_data/samples_run1.hdf5 data 3
   ```
+  This should give the following output:
+  ```terminal
+  File:  example_data/samples_run1.hdf5
+  Group: data
+  
+  The 3 highest log-likelihood point(s):
+  
+  LogLike: -2.53130026064170e+01
+  Parameters:
+    NormalDist:
+      mu: 2.08331783688065e+01
+      sigma: 2.15049587260387e+00
+  
+  
+  LogLike: -2.53130028409013e+01
+  Parameters:
+    NormalDist:
+      mu: 2.08336541456091e+01
+      sigma: 2.15096678343953e+00
+  
+  
+  LogLike: -2.53130031660756e+01
+  Parameters:
+    NormalDist:
+      mu: 2.08344819535121e+01
+      sigma: 2.14981940988637e+00
 
+  ```
 
 
