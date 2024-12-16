@@ -56,3 +56,23 @@ A repo for developing a collection of Python plotting tools for GAMBIT work.
   This should give a plot looking like this:
   
   <img src="example_plots/2D_posterior__mu__sigma.png" alt="2D posterior example plot" width="500"/>
+
+
+## Utility scripts
+
+There are also some scripts for other common tasks besides plotting.
+
+### Print dataset names
+  - Read the hdf5 file `example_data/samples_run1.hdf5` and print all the dataset names, ignoring datasets whose name begins with `"metadata"` or ends with `"_isvalid"`
+  ```terminal
+  python print_all_dataset_names.py example_data/samples_run1.hdf5 --ignore-startswith "metadata" --ignore-endswith "_isvalid"
+  ```
+
+### Get parameters of the highest-likelihood points
+  - Read the `data` group in the hdf5 file `example_data/samples_run1.hdf5` and print the input parameters for the 3 highest-likelihood points
+  ```terminal
+  python print_high_loglike_points.py example_data/samples_run1.hdf5 data 3
+  ```
+
+
+

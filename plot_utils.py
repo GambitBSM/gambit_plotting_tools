@@ -163,7 +163,7 @@ def collect_all_model_and_param_names(hdf5_file_and_group_name):
     return model_param_dict
 
 
-def read_hdf5_datasets(hdf5_file_and_group_names, requested_datasets, filter_invalid_points=True):
+def read_hdf5_datasets(hdf5_file_and_group_names, requested_datasets, filter_invalid_points=True, verbose=True):
 
     first_dset_key = requested_datasets[0][0] 
 
@@ -189,7 +189,8 @@ def read_hdf5_datasets(hdf5_file_and_group_names, requested_datasets, filter_inv
     # Loop over files and data sets
     for file_name, group_name in hdf5_file_and_group_names:
 
-        print(f"Reading file: {file_name}")
+        if verbose:
+            print(f"Reading file: {file_name}")
 
         f = h5py.File(file_name, "r")
         group = f[group_name]
@@ -197,7 +198,8 @@ def read_hdf5_datasets(hdf5_file_and_group_names, requested_datasets, filter_inv
         # for key, dset_info in requested_datasets.items():
         for key, dset_info in requested_datasets:
             data[key] = np.append(data[key], np.array(group[dset_info[0]], dtype=dset_info[1]))
-            print(f"- Read dataset: {dset_info[0]}")
+            if verbose:
+                print(f"- Read dataset: {dset_info[0]}")
 
         f.close()
 
@@ -216,7 +218,8 @@ def read_hdf5_datasets(hdf5_file_and_group_names, requested_datasets, filter_inv
 
     # Print dataset length (after filtering)
     n_pts = data[first_dset_key].shape[0]
-    print(f"Number of points read: {n_pts}")
+    if verbose:
+        print(f"Number of points read: {n_pts}")
 
     return data
 

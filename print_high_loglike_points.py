@@ -1,12 +1,37 @@
+import argparse
 import numpy as np
+
 import plot_utils
 
 
-print_n_points = 1
+#
+# Parse input arguments
+#
 
-# Specify input hdf5 file and group name
-hdf5_file_and_group_name = ("./example_data/samples_run1.hdf5", "data")
+parser = argparse.ArgumentParser(
+    description="Read a GAMBIT hdf5 file and print the parameters of the points with highest log-likelihood.",
+    formatter_class=argparse.RawTextHelpFormatter,
+    epilog="""Example usage:
+    python print_high_loglike_points.py path/to/my_file.hdf5 data 3
+    """
+)
 
+parser.add_argument("file_name", type=str, help="Input hdf5 file name.")
+parser.add_argument("group_name", type=str, help="Name of the hdf5 group in the input file.")
+parser.add_argument("print_n_points", type=int, help="The number of points to print.")
+
+args = parser.parse_args()
+
+file_name = args.file_name
+group_name = args.group_name
+print_n_points = args.print_n_points
+
+
+# 
+# Collect info and read file
+#
+
+hdf5_file_and_group_name = (file_name, group_name)
 
 # Get all dataset names
 all_dataset_names = plot_utils.collect_all_dataset_names(hdf5_file_and_group_name)
@@ -30,19 +55,24 @@ for dset_name in all_dataset_names:
         load_datasets.append((short_param_name, (dset_name, float)))        
 
 # Now create our main data dictionary by reading the hdf5 files
-data = plot_utils.read_hdf5_datasets([hdf5_file_and_group_name], load_datasets, filter_invalid_points=True)
+data = plot_utils.read_hdf5_datasets([hdf5_file_and_group_name], load_datasets, filter_invalid_points=True, verbose=False)
 
+
+#
+# Print parameters of the highest loglike points
+#
 
 # Reorder all datasets so that points with high log-likelihood appear first
 p = np.argsort(data['LogLike'])[::-1]
 for key in data.keys():
     data[key] = data[key][p]
 
-
 # Finally, print parameter points to screen (in yaml format):
 print()
+print(f"File:  {file_name}")
+print(f"Group: {group_name}")
 print()
-print(f"Listing the {print_n_points} point(s) with highest log-likelihood:")
+print(f"The {print_n_points} highest log-likelihood point(s):")
 print()
 for i in range(print_n_points):
     loglike_val = data["LogLike"][i]
