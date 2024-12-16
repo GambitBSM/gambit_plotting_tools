@@ -11,8 +11,8 @@ parser = argparse.ArgumentParser(
     description="Read a GAMBIT hdf5 file and print all the dataset names.",
     formatter_class=argparse.RawTextHelpFormatter,
     epilog="""Example usage:
-    python print_all_dataset_names.py path/to/my_file.hdf5 --ignore-endswith \"_isvalid\" --ignore-startswith \"metadata\"
-    python print_all_dataset_names.py path/to/my_file.hdf5 --include-contains \"primary_parameters\"
+    python print_dataset_names.py path/to/my_file.hdf5 --ignore-endswith \"_isvalid\" --ignore-startswith \"metadata\"
+    python print_dataset_names.py path/to/my_file.hdf5 --include-contains \"primary_parameters\"
     """
 )
 
