@@ -65,7 +65,7 @@ There are also some scripts for other common tasks besides plotting.
 ### Print dataset names
   - Read the hdf5 file `example_data/samples_run1.hdf5` and print all the dataset names, ignoring datasets whose name begins with `"metadata"` or ends with `"_isvalid"`
   ```terminal
-  python print_all_dataset_names.py example_data/samples_run1.hdf5 --ignore-startswith "metadata" --ignore-endswith "_isvalid"
+  python print_dataset_names.py example_data/samples_run1.hdf5 --ignore-startswith "metadata" --ignore-endswith "_isvalid"
   ```
   This should give an output looking like this:
   ```terminal
