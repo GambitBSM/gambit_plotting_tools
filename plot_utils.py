@@ -110,6 +110,59 @@ def create_folders_if_not_exist(file_path):
         pass
 
 
+def collect_all_dataset_names(hdf5_file_and_group_name, leave_out_isvalid_datasets=True):
+    dataset_names = []
+
+    file_name, group_name = hdf5_file_and_group_name
+
+    # Open the HDF5 file
+    with h5py.File(file_name, 'r') as file:
+
+        def collect_datasets(name):
+            if leave_out_isvalid_datasets and name.endswith("_isvalid"):
+                pass
+            else:
+                dataset_names.append(name)
+        
+        # Visit all datasets in the group and collect the dataset names
+        file[group_name].visit(collect_datasets)
+
+    return dataset_names    
+
+
+
+def collect_all_model_names(hdf5_file_and_group_name):
+
+    all_dataset_names = collect_all_dataset_names(hdf5_file_and_group_name)
+
+    all_model_names = []
+    for dset_name in all_dataset_names:
+        if "::primary_parameters::" in dset_name:
+            model_name = dset_name.split("@")[1].split("::")[0] 
+            if not model_name in all_model_names:
+                all_model_names.append(model_name)    
+
+    return all_model_names
+
+
+def collect_all_model_and_param_names(hdf5_file_and_group_name):
+
+    all_dataset_names = collect_all_dataset_names(hdf5_file_and_group_name)
+
+    all_model_names = collect_all_model_names(hdf5_file_and_group_name)
+
+    model_param_dict = {}
+    for model_name in all_model_names:
+        model_param_dict[model_name] = []
+    for dset_name in all_dataset_names:
+        if "::primary_parameters::" in dset_name:
+            short_param_name = dset_name.split("::")[-1]
+            model_name = dset_name.split("@")[1].split("::")[0] 
+            model_param_dict[model_name].append(short_param_name)
+
+    return model_param_dict
+
+
 def read_hdf5_datasets(hdf5_file_and_group_names, requested_datasets, filter_invalid_points=True):
 
     first_dset_key = requested_datasets[0][0] 
