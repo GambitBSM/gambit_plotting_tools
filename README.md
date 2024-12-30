@@ -15,6 +15,16 @@ A repo for developing a collection of Python plotting tools for GAMBIT work.
   
   <img src="example_plots/1D_profile__sigma__LogLike.png" alt="1D profile likelihood example plot" width="500"/>
 
+  For cases where the likelihood function is noisy, e.g. due to Monte Carlo simulations, it may be useful to do some smoothing before making profile likelihood plots. An example of this is given in `example_1D_profile_like_hdf5_with_averaging.py`, which can be run as  
+  ```terminal
+  python example_1D_profile_like_hdf5_with_averaging.py
+  ```
+  Here are example plots before and after the smoothing:
+  
+  <img src="example_plots/1D_profile__sigma__LogLike_noisy.png" alt="1D profile likelihood example plot" width="275"/>
+  <img src="example_plots/1D_profile__sigma__LogLike_noisy_avg.png" alt="1D profile likelihood example plot" width="275"/>
+
+
 
 ### 2D profile likelihood plots
 
