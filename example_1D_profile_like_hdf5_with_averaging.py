@@ -25,6 +25,35 @@ data = plot_utils.read_hdf5_datasets([(hdf5_file, group_name)], datasets, filter
 
 
 
+#
+# Do some nearest-neighbor averaging? 
+# 
+
+# This is useful if e.g. the loglike function has Monte Carlo noise, 
+# so that if the scan has collected many samples near the best-fit region, 
+# the exact position and loglike value of the best-fit point is likely to 
+# be due to a lucky MC fluctuation. The dataset "LogLike_noisy" above is an
+# example of such a case. 
+
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import StandardScaler
+
+k = 30
+NN_instance = NearestNeighbors(n_neighbors=k, algorithm='auto')
+scaler = StandardScaler()
+
+# Create a new dataset "LogLike_noisy_avg" where each point has the average value taken
+# across its k nearest neighbors (including the point itself)
+data["LogLike_noisy_avg"] = plot_utils.nearest_neighbor_averaging(
+    [(hdf5_file, group_name)], 
+    "LogLike_noisy", 
+    NN_instance, 
+    scaler=scaler, 
+    filter_invalid_points=True
+)
+
+
+
 # 
 # Make a 1D profile likelihood plot
 # 

@@ -13,7 +13,7 @@ A repo for developing a collection of Python plotting tools for GAMBIT work.
   ```
   This should give a plot looking like this:
   
-  <img src="example_plots/1D_profile__sigma.png" alt="1D profile likelihood example plot" width="500"/>
+  <img src="example_plots/1D_profile__sigma__LogLike.png" alt="1D profile likelihood example plot" width="500"/>
 
 
 ### 2D profile likelihood plots

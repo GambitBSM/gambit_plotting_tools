@@ -1089,3 +1089,50 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
 
 
 
+def nearest_neighbor_averaging(hdf5_file_and_group_names, target_dataset, NN_instance, scaler=None, filter_invalid_points=True):
+
+    # Create a list of tuples of the form (shorthand key, (full dataset name, dataset type)).
+    # First add the target dataset to be averaged
+    datasets = [
+        (target_dataset, (target_dataset, float)),
+    ]
+    # Then add the datasets for all the model parameters, assuming all files contain the same datasets
+    all_dataset_names = collect_all_dataset_names(hdf5_file_and_group_names[0])
+    i = 0
+    shorthand_param_names = []
+    for dset_name in all_dataset_names:
+        if "::primary_parameters::" in dset_name:
+            datasets.append( (f"x{i}", (dset_name, float)) )
+            shorthand_param_names.append(f"x{i}")
+            i += 1
+    n_pars = i
+
+    # Now create our main data dictionary by reading the hdf5 files
+    data = read_hdf5_datasets(hdf5_file_and_group_names, datasets, filter_invalid_points=filter_invalid_points)
+    n_points = len(data[target_dataset])
+
+    # Construct X array from input parameter datasets
+    X = np.array([data[par_name] for par_name in shorthand_param_names]).T
+
+    # Scale the input coordinates before doing the nearest-neighbors search?
+    if scaler != None:
+        X = scaler.fit_transform(X)
+
+    # Now do the nearest-neighbors search
+    neighbors = NN_instance.fit(X)
+    distances, indices = neighbors.kneighbors(X)
+
+    # Compute the mean target_dataset value for each group and return
+    mean_target_per_group = np.zeros(n_points)
+    for i in range(n_points):
+        group_indices = indices[i]
+        mean_target_per_group[i] = np.mean(data[target_dataset][group_indices])
+
+    return mean_target_per_group
+
+
+
+
+
+
+
