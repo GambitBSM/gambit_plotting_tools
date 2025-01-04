@@ -1,5 +1,5 @@
 import numpy as np
-from gambit_colormaps import gambit_std_cmap
+from gambit_plotting_tools.gambit_colormaps import gambit_std_cmap
 
 
 plot_settings = {

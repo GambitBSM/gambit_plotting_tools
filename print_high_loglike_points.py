@@ -1,7 +1,9 @@
+#!/usr/bin/env python3
+
 import argparse
 import numpy as np
 
-import plot_utils
+import gambit_plotting_tools.gambit_plot_utils as plot_utils
 
 
 #
