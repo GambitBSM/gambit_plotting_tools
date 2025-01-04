@@ -1,6 +1,5 @@
 import matplotlib
 
-
 # 
 # The standard GAMBIT color map for 2D profile likelihood plots
 # 

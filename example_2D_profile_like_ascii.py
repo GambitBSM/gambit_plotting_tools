@@ -4,8 +4,8 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-import plot_utils
-import gambit_plot_settings
+import gambit_plotting_tools.gambit_plot_utils as plot_utils
+import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 
 
 

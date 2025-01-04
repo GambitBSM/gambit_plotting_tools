@@ -12,8 +12,8 @@ from pathlib import Path
 import scipy.stats
 from scipy.special import gammaincinv
 
-from gambit_colormaps import gambit_std_cmap
-import gambit_plot_settings
+from gambit_plotting_tools.gambit_colormaps import gambit_std_cmap
+import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 
 plt.rcParams.update({
     "text.usetex": True,
