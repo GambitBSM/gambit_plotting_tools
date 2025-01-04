@@ -1,6 +1,6 @@
 # GAMBIT plotting tools
 
-A collection of plotting tools developed for use with GAMBIT and GAMBIT-light (see gambitbsm.org).
+A collection of plotting tools developed for use with **GAMBIT** and **GAMBIT-light** (see [gambitbsm.org](https://gambitbsm.org)).
 
 
 ## Installation
