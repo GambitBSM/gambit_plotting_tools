@@ -47,7 +47,8 @@ scaler = StandardScaler()
 data["LogLike_noisy_avg"] = plot_utils.nearest_neighbor_averaging(
     [(hdf5_file, group_name)], 
     "LogLike_noisy", 
-    NN_instance, 
+    NN_instance,
+    parameter_dataset_tag="::primary_parameters::", 
     scaler=scaler, 
     filter_invalid_points=True
 )
