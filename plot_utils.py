@@ -1089,7 +1089,8 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
 
 
 
-def nearest_neighbor_averaging(hdf5_file_and_group_names, target_dataset, NN_instance, scaler=None, filter_invalid_points=True):
+def nearest_neighbor_averaging(hdf5_file_and_group_names, target_dataset, NN_instance, 
+    parameter_dataset_tag="::primary_parameters::", scaler=None, filter_invalid_points=True):
 
     # Create a list of tuples of the form (shorthand key, (full dataset name, dataset type)).
     # First add the target dataset to be averaged
@@ -1101,7 +1102,7 @@ def nearest_neighbor_averaging(hdf5_file_and_group_names, target_dataset, NN_ins
     i = 0
     shorthand_param_names = []
     for dset_name in all_dataset_names:
-        if "::primary_parameters::" in dset_name:
+        if parameter_dataset_tag in dset_name:
             datasets.append( (f"x{i}", (dset_name, float)) )
             shorthand_param_names.append(f"x{i}")
             i += 1
@@ -1112,6 +1113,9 @@ def nearest_neighbor_averaging(hdf5_file_and_group_names, target_dataset, NN_ins
     n_points = len(data[target_dataset])
 
     # Construct X array from input parameter datasets
+
+    # Reshape your data either using array.reshape(-1, 1) if your data has a single feature or array.reshape(1, -1) if it contains a single sample.
+
     X = np.array([data[par_name] for par_name in shorthand_param_names]).T
 
     # Scale the input coordinates before doing the nearest-neighbors search?
