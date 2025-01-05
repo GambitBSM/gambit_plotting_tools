@@ -13,7 +13,7 @@ pip install ./gambit_plotting_tools
 ```
 
 
-## Current working examples
+## Examples
 
 ### 1D profile likelihood plots
 
