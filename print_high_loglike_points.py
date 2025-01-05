@@ -2,6 +2,7 @@
 
 import argparse
 import numpy as np
+import h5py
 
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 
@@ -32,6 +33,22 @@ print_n_points = args.print_n_points
 # 
 # Collect info and read file
 #
+
+# Check if the hdf5 file was created by GAMBIT or GAMBIT-light
+gambit_version = None
+with h5py.File(file_name, 'r') as file:
+    if "metadata" in file:
+        if "GAMBIT" in file["metadata"]:
+            gambit_version = "gambit"
+        elif "GAMBIT-light" in file["metadata"]:
+            gambit_version = "gambit-light"
+
+if gambit_version is None:
+    raise Exception("Cannot find the dataset 'metadata/GAMBIT' or 'metadata/GAMBIT-light'.")
+
+if gambit_version == "gambit-light":
+    raise Exception("This script currently only works with hdf5 files created with GAMBIT, not with GAMBIT-light.")
+
 
 hdf5_file_and_group_name = (file_name, group_name)
 
