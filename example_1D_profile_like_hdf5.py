@@ -10,13 +10,12 @@ import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 # Read file
 # 
 
-hdf5_file = "./example_data/samples_run1.hdf5" 
+hdf5_file = "./example_data/results_run1.hdf5" 
 group_name = "data"
 
 # Create a list of tuples of the form (shorthand key, (full dataset name, dataset type))
 datasets = [
     ("LogLike", ("LogLike", float)),
-    ("LogLike_noisy", ("LogLike_noisy", float)),
     ("sigma",   ("#NormalDist_parameters @NormalDist::primary_parameters::sigma", float)),
 ]
 
@@ -33,9 +32,7 @@ confidence_levels = [0.683, 0.954]
 
 # Plot variables
 x_key = "sigma"
-# y_key = "LogLike"
-# y_key = "LogLike_noisy"
-y_key = "LogLike_noisy_avg"
+y_key = "LogLike"
 
 # Set some bounds manually?
 dataset_bounds = {

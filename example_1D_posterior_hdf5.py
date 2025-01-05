@@ -10,7 +10,7 @@ import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 # Read file
 # 
 
-hdf5_file = "./example_data/samples_multinest.hdf5" 
+hdf5_file = "./example_data/results_multinest.hdf5" 
 group_name = "data"
 
 # Create a list of tuples of the form (shorthand key, (full dataset name, dataset type))

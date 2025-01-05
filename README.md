@@ -17,7 +17,7 @@ pip install ./gambit_plotting_tools
 
 ### 1D profile likelihood plots
 
-- Make a single 1D profile likelihood plot from the data in the hdf5 file `example_data/samples_run1.hdf5`
+- Make a single 1D profile likelihood plot from the data in the hdf5 file `example_data/results_run1.hdf5`
   ```terminal
   python example_1D_profile_like_hdf5.py
   ```
@@ -28,7 +28,7 @@ pip install ./gambit_plotting_tools
 
 ### 2D profile likelihood plots
 
-- Make a single 2D profile likelihood plot from the data in the hdf5 file `example_data/samples_run1.hdf5`
+- Make a single 2D profile likelihood plot from the data in the hdf5 file `example_data/results_run1.hdf5`
   ```terminal
   python example_2D_profile_like_hdf5.py
   ```
@@ -36,7 +36,7 @@ pip install ./gambit_plotting_tools
   
   <img src="example_plots/2D_profile__mu__sigma__LogLike.png" alt="2D profile likelihood example plot" width="500"/>
   
-- Make multiple 2D profile likelihood plots in one go, combining the data from the hdf5 files `example_data/samples_run1.hdf5` and `example_data/samples_run2.hdf5`
+- Make multiple 2D profile likelihood plots in one go, combining the data from the hdf5 files `example_data/results_run1.hdf5` and `example_data/results_run2.hdf5`
   ```terminal
   python example_2D_profile_like_hdf5_multiple.py
   ```
@@ -48,7 +48,7 @@ pip install ./gambit_plotting_tools
 
 ### 1D posterior plots
 
-- Make a single 1D posterior plot from the data in the hdf5 file `example_data/samples_multinest.hdf5`
+- Make a single 1D posterior plot from the data in the hdf5 file `example_data/results_multinest.hdf5`
   ```terminal
   python example_1D_posterior_hdf5.py
   ```
@@ -59,7 +59,7 @@ pip install ./gambit_plotting_tools
 
 ### 2D posterior plots
 
-- Make a single 2D posterior plot from the data in the hdf5 file `example_data/samples_multinest.hdf5`
+- Make a single 2D posterior plot from the data in the hdf5 file `example_data/results_multinest.hdf5`
   ```terminal
   python example_2D_posterior_hdf5.py
   ```
@@ -73,9 +73,9 @@ pip install ./gambit_plotting_tools
 There are also some scripts for other common tasks besides plotting.
 
 ### Print dataset names
-  - Read the hdf5 file `example_data/samples_run1.hdf5` and print all the dataset names, ignoring datasets whose name begins with `"metadata"` or ends with `"_isvalid"`
+  - Read the hdf5 file `example_data/results_run1.hdf5` and print all the dataset names, ignoring datasets whose name begins with `"metadata"` or ends with `"_isvalid"`
   ```terminal
-  ./print_dataset_names.py example_data/samples_run1.hdf5 --ignore-startswith "metadata" --ignore-endswith "_isvalid"
+  ./print_dataset_names.py example_data/results_run1.hdf5 --ignore-startswith "metadata" --ignore-endswith "_isvalid"
   ```
   This should give an output looking like this:
   ```terminal
@@ -98,13 +98,13 @@ There are also some scripts for other common tasks besides plotting.
   ```
 
 ### Get parameters of the highest-likelihood points
-  - Read the `data` group in the hdf5 file `example_data/samples_run1.hdf5` and print the input parameters for the 3 highest-likelihood points
+  - Read the `data` group in the hdf5 file `example_data/results_run1.hdf5` and print the input parameters for the 3 highest-likelihood points
   ```terminal
-  ./print_high_loglike_points.py example_data/samples_run1.hdf5 data 3
+  ./print_high_loglike_points.py example_data/results_run1.hdf5 data 3
   ```
   This should give the following output:
   ```terminal
-  File:  example_data/samples_run1.hdf5
+  File:  example_data/results_run1.hdf5
   Group: data
   
   The 3 highest log-likelihood point(s):

@@ -11,8 +11,8 @@ import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 # 
 
 hdf5_file_and_group_names = [
-    ("./example_data/samples_run1.hdf5", "data"),
-    ("./example_data/samples_run2.hdf5", "data"),
+    ("./example_data/results_run1.hdf5", "data"),
+    ("./example_data/results_run2.hdf5", "data"),
 ]
 
 # Create a list of tuples of the form (shorthand key, (full dataset name, dataset type))

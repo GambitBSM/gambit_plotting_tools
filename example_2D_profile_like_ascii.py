@@ -13,7 +13,7 @@ import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 # Read data file
 # 
 
-data_file = "./example_data/samples.dat"
+data_file = "./example_data/results.dat"
 
 # Create a dictionary that maps a shorthand key to the datafile column number
 datasets = OrderedDict([
