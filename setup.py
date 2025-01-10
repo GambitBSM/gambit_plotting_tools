@@ -21,6 +21,8 @@ setup(
         "matplotlib >= 3.5.2",
         "scipy >= 1.10.1",
         "h5py >= 3.9.0",
+        "urllib",
+        "pillow",
     ],
     include_package_data=True,
     license="BSD-3-Clause",
