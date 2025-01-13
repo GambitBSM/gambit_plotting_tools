@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
-from gambit_plotting_tools import add_header, add_logo
+from gambit_plotting_tools.annotate import add_gambit_header, add_gambit_logo
 
 # 
 # Read file
@@ -77,8 +77,8 @@ fig, ax = plot_utils.plot_1D_profile(
 fig.text(0.53, 0.85, "Example text", ha="left", va="center", fontsize=plot_settings["fontsize"], color="black")
 
 # Add branding
-add_header(ax, "2.5")
-add_logo(ax)
+add_gambit_header(ax=ax, version="2.5")
+add_gambit_logo(ax=ax)
 
 # Save to file
 output_path = f"./plots/1D_profile__{x_key}__{y_key}.pdf"

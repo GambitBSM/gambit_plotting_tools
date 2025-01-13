@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
+from gambit_plotting_tools.annotate import add_header
 
 
 # 
@@ -106,9 +107,9 @@ for z_key in z_keys:
                 plot_settings=plot_settings,
             )
 
-            # Add text
+            # Add header
             header_text = "$1\\sigma$ and $2\\sigma$ CL regions. \\textsf{GAMBIT} 2.5"
-            fig.text(1.0-0.18, 1.0-0.05, header_text, ha="right", va="bottom", fontsize=plot_settings["header_fontsize"])
+            add_header(header_text, ax=ax)
 
             # Save to file
             output_path = f"./plots/2D_profile__{x_key}__{y_key}__{z_key}.pdf"

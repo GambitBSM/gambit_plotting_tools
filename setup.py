@@ -10,6 +10,10 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/GambitBSM/gambit_plotting_tools",
     packages=find_packages(),
+    include_package_data=True,
+    package_data={
+        'gambit_plotting_tools': ['gambit_logo_small.png'],
+    },    
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: BSD License",
@@ -21,9 +25,7 @@ setup(
         "matplotlib >= 3.5.2",
         "scipy >= 1.10.1",
         "h5py >= 3.9.0",
-        "urllib",
         "pillow",
     ],
-    include_package_data=True,
     license="BSD-3-Clause",
 )

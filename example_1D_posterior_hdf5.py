@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
+from gambit_plotting_tools.annotate import add_gambit_header
 
 
 # 
@@ -74,9 +75,10 @@ fig, ax = plot_utils.plot_1D_posterior(
 )
 
 # Add text
-header_text = "\\textsf{GAMBIT} 2.5"
-fig.text(1.0-0.18, 1.0-0.05, header_text, ha="right", va="bottom", fontsize=plot_settings["header_fontsize"])
 fig.text(0.53, 0.85, "Example text", ha="left", va="center", fontsize=plot_settings["fontsize"], color="black")
+
+# Add header
+add_gambit_header(ax=ax, version="2.5")
 
 # Add a star marker at the maximum likelihood point
 max_like_index = np.argmax(data["LogLike"])

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
+from gambit_plotting_tools.annotate import add_header
 
 
 # 
@@ -83,9 +84,11 @@ fig, ax, cbar_ax = plot_utils.plot_2D_posterior(
 )
 
 # Add text
-header_text = "$1\\sigma$ and $2\\sigma$ credible regions. \\textsf{GAMBIT} 2.5"
-fig.text(1.0-0.18, 1.0-0.05, header_text, ha="right", va="bottom", fontsize=plot_settings["header_fontsize"])
 fig.text(0.50, 0.30, "Example text", ha="left", va="center", fontsize=plot_settings["fontsize"], color="white")
+
+# Add header
+header_text = "$1\\sigma$ and $2\\sigma$ credible regions. \\textsf{GAMBIT} 2.5"
+add_header(header_text, ax=ax)
 
 # Add anything else to the plot, e.g. some more lines and labels and stuff
 ax.plot([20.0, 30.0], [5.0, 3.0], color="white", linewidth=plot_settings["contour_linewidth"], linestyle="dashed")

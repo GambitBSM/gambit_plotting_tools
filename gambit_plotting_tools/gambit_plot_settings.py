@@ -99,5 +99,8 @@ plot_settings = {
     "colorbar_n_minor_ticks": 21,
 
     "header_fontsize": 7,
+    "header_pad": 2,
+
+    "logo_size": 0.27
 }
 
