@@ -25,6 +25,8 @@ pip install ./gambit_plotting_tools
   
   <img src="example_plots/1D_profile__sigma__LogLike.png" alt="1D profile likelihood example plot" width="500"/>
 
+  This example also illustrates how to add the small GAMBIT logo to the bottom-right corner of a plot. 
+
 
 ### 2D profile likelihood plots
 
