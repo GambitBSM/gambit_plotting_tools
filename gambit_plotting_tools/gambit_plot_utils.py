@@ -9,7 +9,6 @@ import matplotlib.colors as mcolors
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from pathlib import Path
-import scipy.stats
 from scipy.special import gammaincinv
 
 from gambit_plotting_tools.gambit_colormaps import gambit_std_cmap
@@ -22,58 +21,6 @@ plt.rcParams.update({
     "axes.linewidth": 0.1,
     "axes.edgecolor": "black",
 })
-
-
-def print_confidence_level_table():
-    # Adapted from http://www.reid.ai/2012/09/chi-squared-distribution-table-with.html
-
-    # Confidence levels (in number of sigmas) to list in table
-    use_sigmas = [
-        np.sqrt(scipy.stats.chi2.ppf(0.68, 1)),  
-        1.0,
-        np.sqrt(scipy.stats.chi2.ppf(0.9, 1)),
-        np.sqrt(scipy.stats.chi2.ppf(0.95, 1)),
-        2.0,
-        np.sqrt(scipy.stats.chi2.ppf(0.99, 1)),
-        3.0,
-        np.sqrt(scipy.stats.chi2.ppf(0.999, 1)),
-        4.0
-    ]
-
-    # The corresponding confidence levels, in probabilities
-    confidence_levels = [scipy.stats.chi2.cdf(s**2, 1) for s in use_sigmas]
-
-    # The range of degrees of freedom to list in the table
-    use_dofs = range(1,3)
-
-    # Print table
-    print()
-    print("conf. level   " + " ".join([f"{100*ci:>10.5f}%" for ci in confidence_levels]))
-    print("#sigmas       " + " ".join([f"{s:>10.5f} " for s in use_sigmas]))
-    print("p-value       " + " ".join([f"{(1-ci):>10.5f} " for ci in confidence_levels]))
-    print()
-
-    # Print chi^2 values
-    for d in use_dofs:
-        chi_squared = [ scipy.stats.chi2.ppf( ci, d) for ci in confidence_levels ]
-        print(f"X^2  (dof={d})  " + " ".join([f"{c:>10.5f} " for c in chi_squared]))
-    print()
-
-    # Print corresponding delta log-likelihoods (assuming Wilks' theorem)
-    for d in use_dofs:
-        chi_squared = [ scipy.stats.chi2.ppf( ci, d) for ci in confidence_levels ]
-        delta_loglike = [-0.5 * c for c in chi_squared]
-        print(f"ΔlnL (dof={d})  " + " ".join([f"{dll:>10.5f} " for dll in delta_loglike]))
-    print()
-
-    # Print corresponding likelihood ratios (assuming Wilks' theorem)
-    for d in use_dofs:
-        chi_squared = [ scipy.stats.chi2.ppf( ci, d) for ci in confidence_levels ]
-        delta_loglike = [-0.5 * c for c in chi_squared]
-        likelihood_ratio = [np.exp(dll) for dll in delta_loglike]
-        print(f"L/L' (dof={d})  " + " ".join([f"{llr:>10.5f} " for llr in likelihood_ratio]))
-    print()
-
 
 
 # Some quick ways to get contour levels for a given list of confidence levels (adapted from pippi)

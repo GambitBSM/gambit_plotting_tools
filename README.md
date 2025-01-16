@@ -5,11 +5,10 @@ A collection of plotting tools developed for use with **GAMBIT** and **GAMBIT-li
 
 ## Installation
 
-Simply clone this repo and install using `pip`:
+Simply install using `pip`:
 
 ```terminal
-git clone https://github.com/GambitBSM/gambit_plotting_tools.git
-pip install ./gambit_plotting_tools
+pip install git+https://github.com/GambitBSM/gambit_plotting_tools.git
 ```
 
 
@@ -72,12 +71,17 @@ pip install ./gambit_plotting_tools
 
 ## Utility scripts
 
-There are also some scripts for other common tasks besides plotting.
+There are also some commands for other common tasks besides plotting
+
+### Print confidence level table
+  ```terminal
+  print_confidence_level_table
+  ```
 
 ### Print dataset names
   - Read the hdf5 file `example_data/results_run1.hdf5` and print all the dataset names, ignoring datasets whose name begins with `"metadata"` or ends with `"_isvalid"`
   ```terminal
-  ./print_dataset_names.py example_data/results_run1.hdf5 --ignore-startswith "metadata" --ignore-endswith "_isvalid"
+  print_dataset_names example_data/results_run1.hdf5 --ignore-startswith "metadata" --ignore-endswith "_isvalid"
   ```
   This should give an output looking like this:
   ```terminal
@@ -102,7 +106,7 @@ There are also some scripts for other common tasks besides plotting.
 ### Get parameters of the highest-likelihood points
   - Read the `data` group in the hdf5 file `example_data/results_run1.hdf5` and print the input parameters for the 3 highest-likelihood points
   ```terminal
-  ./print_high_loglike_points.py example_data/results_run1.hdf5 data 3
+  print_high_loglike_points example_data/results_run1.hdf5 data 3
   ```
   This should give the following output:
   ```terminal

@@ -10,6 +10,12 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/GambitBSM/gambit_plotting_tools",
     packages=find_packages(),
+    entry_points = {
+        'console_scripts': ['print_confidence_level_table=gambit_plotting_tools.print_confidence_level_table:main',
+                            'print_dataset_names=gambit_plotting_tools.print_dataset_names:main',
+                            'print_high_loglike_points=gambit_plotting_tools.print_high_loglike_points:main'
+                            ]
+    },
     include_package_data=True,
     package_data={
         'gambit_plotting_tools': ['gambit_logo_small.png'],
@@ -26,6 +32,7 @@ setup(
         "scipy >= 1.10.1",
         "h5py >= 3.9.0",
         "pillow",
+        "tabulate",
     ],
     license="BSD-3-Clause",
 )
