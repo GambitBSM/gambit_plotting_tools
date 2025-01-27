@@ -37,6 +37,8 @@ pip install git+https://github.com/GambitBSM/gambit_plotting_tools.git
   
   <img src="example_plots/2D_profile__mu__sigma__LogLike.png" alt="2D profile likelihood example plot" width="500"/>
   
+  This example also illustrates how to add a contour drawn from a set of stored coordinates, e.g. from some digitised plot.
+
 - Make multiple 2D profile likelihood plots in one go, combining the data from the hdf5 files `example_data/results_run1.hdf5` and `example_data/results_run2.hdf5`
   ```terminal
   python example_2D_profile_like_hdf5_multiple.py
