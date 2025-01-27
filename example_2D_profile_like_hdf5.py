@@ -84,7 +84,7 @@ fig, ax, cbar_ax = plot_utils.plot_2D_profile(
 )
 
 # Add text
-fig.text(0.50, 0.30, "Example text", ha="left", va="center", fontsize=plot_settings["fontsize"], color="white")
+fig.text(0.525, 0.350, "Example text", ha="left", va="center", fontsize=plot_settings["fontsize"], color="white")
 
 # Add header
 header_text = "$1\\sigma$ and $2\\sigma$ CL regions. \\textsf{GAMBIT} 2.5"
@@ -93,6 +93,11 @@ add_header(header_text, ax=ax)
 # Add anything else to the plot, e.g. some more lines and labels and stuff
 ax.plot([20.0, 30.0], [5.0, 3.0], color="white", linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
 fig.text(0.53, 0.79, "A very important line!", ha="left", va="center", rotation=-31.5, fontsize=plot_settings["fontsize"]-5, color="white")
+
+# Draw a contour using coordinates stored in a .csv file
+x_contour, y_contour = np.loadtxt("./example_data/contour_coordinates.csv", delimiter=",", usecols=(0, 1), unpack=True)
+ax.plot(x_contour, y_contour, color="orange", linestyle="dashed", linewidth=plot_settings["contour_linewidth"], alpha=0.7)
+fig.text(0.23, 0.23, "Overlaid contour from\n coordinates in some data file", ha="left", va="center", fontsize=plot_settings["fontsize"]-5, color="orange")
 
 # Save to file
 output_path = f"./plots/2D_profile__{x_key}__{y_key}__{z_key}.pdf"
