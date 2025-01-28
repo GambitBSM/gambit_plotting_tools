@@ -224,6 +224,28 @@ def get_intersection_points_from_lines(line1, line2):
 
 
 
+def save_contour_coordinates(contour, contour_coordinates_output_file, header=""):
+
+    coordinates = []
+
+    # Iterate over each contour line
+    for collection in contour.collections:
+        for path in collection.get_paths():
+            vertices = path.vertices
+            coordinates.append(vertices)
+            # Use NaN separator to mark contour breaks
+            coordinates.append(np.array([[np.nan, np.nan]]))
+
+    # Concatenate all coordinate arrays into one
+    coordinates = np.vstack(coordinates)
+
+    # Save to file
+    create_folders_if_not_exist(contour_coordinates_output_file)
+    np.savetxt(contour_coordinates_output_file, coordinates, delimiter=',', header=header, comments="")
+    print(f"Wrote file: {contour_coordinates_output_file}")
+
+
+
 def create_empty_figure_1D(xy_bounds, plot_settings):
 
     # Get bounds in x and y
@@ -631,9 +653,6 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
                 linewidth=0.0)
 
     main_graph, = plt.plot(x_values, y_values, linestyle="solid", color=plot_settings["1D_profile_likelihood_color"])
-    # DEBUG:
-    # main_graph, = plt.plot(x_values, y_values, linestyle="solid", color=plot_settings["1D_profile_likelihood_color"], linewidth=0.1)
-    # plt.plot(x_values, y_values, ".", color=plot_settings["1D_profile_likelihood_color"], linewidth=0.0)
 
 
     # Add shaded confidence interval bands?
@@ -708,7 +727,8 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
 
 def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray, 
                     labels: tuple, n_bins: tuple, xy_bounds = None, 
-                    contour_levels = [], z_fill_value = -1*np.finfo(float).max, 
+                    contour_levels = [], contour_coordinates_output_file = None,
+                    z_fill_value = -1*np.finfo(float).max, 
                     z_is_loglike = True, plot_likelihood_ratio = True,
                     add_max_likelihood_marker = True,
                     plot_settings = gambit_plot_settings.plot_settings) -> None:
@@ -798,8 +818,14 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     # Draw contours?
     if len(contour_levels) > 0:
         contour_levels.sort()
-        ax.contour(x_values, y_values, z_values, contour_levels, colors=plot_settings["contour_color"], 
-                  linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), linestyles=plot_settings["contour_linestyle"])
+        contour = ax.contour(x_values, y_values, z_values, contour_levels, colors=plot_settings["contour_color"], 
+                             linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), linestyles=plot_settings["contour_linestyle"])
+
+        # Save contour coordinates to file?
+        if contour_coordinates_output_file != None:
+
+            header = "# x,y coordinates for profile likelihood contours at the likelihood ratio values " + ", ".join([f"{l:.4e}" for l in contour_levels]) + ". Sets of coordinates for individual closed contours are separated by nan entries."
+            save_contour_coordinates(contour, contour_coordinates_output_file, header=header)
 
     # Add a star at the max-likelihood point
     if (z_is_loglike and add_max_likelihood_marker):
@@ -928,7 +954,9 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
 
 def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights: np.ndarray, 
                       labels: tuple, n_bins: tuple, xy_bounds = None, 
-                      credible_regions = [], plot_relative_probability = True, 
+                      credible_regions = [], 
+                      contour_coordinates_output_file = None,
+                      plot_relative_probability = True, 
                       add_mean_posterior_marker = True,
                       plot_settings = gambit_plot_settings.plot_settings) -> None:
 
@@ -1003,8 +1031,14 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
         contour_levels.sort()
 
         # Draw the contours
-        ax.contour(X, Y, histogram.T, contour_levels, colors=plot_settings["contour_color"], 
-                   linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), linestyles=plot_settings["contour_linestyle"])
+        contour = ax.contour(X, Y, histogram.T, contour_levels, colors=plot_settings["contour_color"], 
+                             linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), linestyles=plot_settings["contour_linestyle"])
+
+        # Save contour coordinates to file?
+        if contour_coordinates_output_file != None:
+
+            header = "# x,y coordinates for contours corresponding to the "  + ", ".join([f"{cr:.4e}" for cr in credible_regions]) + " credible regions. Sets of coordinates for individual closed contours are separated by nan entries."
+            save_contour_coordinates(contour, contour_coordinates_output_file, header=header)
 
     # Add marker at the mean posterior point
     if add_mean_posterior_marker:

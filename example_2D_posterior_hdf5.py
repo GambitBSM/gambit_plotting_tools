@@ -78,6 +78,7 @@ fig, ax, cbar_ax = plot_utils.plot_2D_posterior(
     xy_bins, 
     xy_bounds=xy_bounds,
     credible_regions=credible_regions,
+    # contour_coordinates_output_file=f"./plots/2D_posterior__{x_key}__{y_key}__coordinates.csv",
     plot_relative_probability=True,
     add_mean_posterior_marker=True,
     plot_settings=plot_settings,
