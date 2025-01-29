@@ -78,6 +78,7 @@ fig, ax, cbar_ax = plot_utils.plot_2D_profile(
     z_is_loglike=True,
     plot_likelihood_ratio=True,
     contour_levels=likelihood_ratio_contour_values,
+    contour_coordinates_output_file=f"./plots/2D_profile__{x_key}__{y_key}__{z_key}__coordinates.csv",
     z_fill_value = -1*np.finfo(float).max,
     add_max_likelihood_marker = True,
     plot_settings=plot_settings,
