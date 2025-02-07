@@ -318,146 +318,6 @@ def create_empty_figure_1D(xy_bounds, plot_settings, ax=None, fig = None):
 
     return fig, ax
 
-
-def create_empty_figure_1D_axis(ax, xy_bounds, plot_settings):
-
-    # Get bounds in x and y
-    x_min, x_max = xy_bounds[0]
-    y_min, y_max = xy_bounds[1]
-
-    figwidth = plot_settings["figwidth"]
-    figheight = plot_settings["figheight"]
-    # figheight_figwidth_ratio = figheight / figwidth
-    # fig = plt.figure(figsize=(figwidth, figheight))
-
-    pad_left = plot_settings["pad_left"]
-    pad_right = plot_settings["pad_right"]
-    pad_bottom = plot_settings["pad_bottom"]
-    pad_top = plot_settings["pad_top"]
-
-    plot_width = 1.0 - pad_left - pad_right
-    plot_height = 1.0 - pad_bottom - pad_top
-
-    # Add axes 
-    left = pad_left
-    bottom = pad_bottom
-    # ax = fig.add_axes((left, bottom, plot_width, plot_height), frame_on=True)
-    ax.set_facecolor(plot_settings["facecolor_plot_1D"])
-
-    # Set frame color and width
-    for spine in ax.spines.values():
-        spine.set_edgecolor(plot_settings["framecolor_plot_1D"])
-        spine.set_linewidth(plot_settings["framewidth_1D"])
-
-    # Axis ranges
-    ax.set_xlim([x_min, x_max])
-    ax.set_ylim([y_min, y_max])
-
-    # Minor ticks
-    ax.xaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(plot_settings["n_minor_ticks_per_major_tick"] + 1))
-    ax.yaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(plot_settings["n_minor_ticks_per_major_tick"] + 1))
-
-    # Tick parameters
-    major_ticks_color = plot_settings["major_ticks_color_1D"]
-    minor_ticks_color = plot_settings["minor_ticks_color_1D"]
-    major_ticks_width = plot_settings["major_ticks_width"]
-    minor_ticks_width = plot_settings["minor_ticks_width"]
-    major_ticks_length = plot_settings["major_ticks_length"]
-    minor_ticks_length = plot_settings["minor_ticks_length"]
-    major_ticks_pad = plot_settings["major_ticks_pad"]
-    minor_ticks_pad = plot_settings["minor_ticks_pad"]
-
-    major_ticks_bottom = plot_settings["major_ticks_bottom"]
-    major_ticks_top = plot_settings["major_ticks_top"]
-    major_ticks_left = plot_settings["major_ticks_left"]
-    major_ticks_right = plot_settings["major_ticks_right"]
-    minor_ticks_bottom = plot_settings["minor_ticks_bottom"]
-    minor_ticks_top = plot_settings["minor_ticks_top"]
-    minor_ticks_left = plot_settings["minor_ticks_left"]
-    minor_ticks_right = plot_settings["minor_ticks_right"]
-
-    ax.tick_params(which="major", axis="x",direction="in", color=major_ticks_color, width=major_ticks_width, length=major_ticks_length, pad=major_ticks_pad, bottom=major_ticks_bottom, top=major_ticks_top)
-    ax.tick_params(which="minor", axis="x",direction="in", color=minor_ticks_color, width=minor_ticks_width, length=minor_ticks_length,  pad=minor_ticks_pad, bottom=minor_ticks_bottom, top=minor_ticks_top)
-    ax.tick_params(which="major", axis="y",direction="in", color=major_ticks_color, width=major_ticks_width, length=major_ticks_length, pad=major_ticks_pad, left=major_ticks_left, right=major_ticks_right)
-    ax.tick_params(which="minor", axis="y",direction="in", color=minor_ticks_color, width=minor_ticks_width, length=minor_ticks_length,  pad=minor_ticks_pad, left=minor_ticks_left, right=minor_ticks_right)
-
-    ax.ticklabel_format(axis="both", style="sci", scilimits=(-3,3))
-
-    ax.xaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
-    ax.yaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
-
-
-
-# def create_empty_figure_2D(xy_bounds, plot_settings):
-
-    # Get bounds in x and y
-    x_min, x_max = xy_bounds[0]
-    y_min, y_max = xy_bounds[1]
-
-    figwidth = plot_settings["figwidth"]
-    figheight = plot_settings["figheight"]
-    figheight_figwidth_ratio = figheight / figwidth
-    fig = plt.figure(figsize=(figwidth, figheight))
-
-    pad_left = plot_settings["pad_left"]
-    pad_right = plot_settings["pad_right"]
-    pad_bottom = plot_settings["pad_bottom"]
-    pad_top = plot_settings["pad_top"]
-
-    plot_width = 1.0 - pad_left - pad_right
-    plot_height = 1.0 - pad_bottom - pad_top
-
-    # Add axes 
-    left = pad_left
-    bottom = pad_bottom
-    ax = fig.add_axes((left, bottom, plot_width, plot_height), frame_on=True)
-    ax.set_facecolor(plot_settings["facecolor_plot"])
-
-    # Set frame color and width
-    for spine in ax.spines.values():
-        spine.set_edgecolor(plot_settings["framecolor_plot"])
-        spine.set_linewidth(plot_settings["framewidth"])
-
-    # Axis ranges
-    plt.xlim([x_min, x_max])
-    plt.ylim([y_min, y_max])
-
-    # Minor ticks
-    ax.xaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(plot_settings["n_minor_ticks_per_major_tick"] + 1))
-    ax.yaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(plot_settings["n_minor_ticks_per_major_tick"] + 1))
-
-    # Tick parameters
-    major_ticks_color = plot_settings["major_ticks_color"]
-    minor_ticks_color = plot_settings["minor_ticks_color"]
-    major_ticks_width = plot_settings["major_ticks_width"]
-    minor_ticks_width = plot_settings["minor_ticks_width"]
-    major_ticks_length = plot_settings["major_ticks_length"]
-    minor_ticks_length = plot_settings["minor_ticks_length"]
-    major_ticks_pad = plot_settings["major_ticks_pad"]
-    minor_ticks_pad = plot_settings["minor_ticks_pad"]
-
-    major_ticks_bottom = plot_settings["major_ticks_bottom"]
-    major_ticks_top = plot_settings["major_ticks_top"]
-    major_ticks_left = plot_settings["major_ticks_left"]
-    major_ticks_right = plot_settings["major_ticks_right"]
-    minor_ticks_bottom = plot_settings["minor_ticks_bottom"]
-    minor_ticks_top = plot_settings["minor_ticks_top"]
-    minor_ticks_left = plot_settings["minor_ticks_left"]
-    minor_ticks_right = plot_settings["minor_ticks_right"]
-
-    plt.tick_params(which="major", axis="x",direction="in", color=major_ticks_color, width=major_ticks_width, length=major_ticks_length, pad=major_ticks_pad, bottom=major_ticks_bottom, top=major_ticks_top)
-    plt.tick_params(which="minor", axis="x",direction="in", color=minor_ticks_color, width=minor_ticks_width, length=minor_ticks_length,  pad=minor_ticks_pad, bottom=minor_ticks_bottom, top=minor_ticks_top)
-    plt.tick_params(which="major", axis="y",direction="in", color=major_ticks_color, width=major_ticks_width, length=major_ticks_length, pad=major_ticks_pad, left=major_ticks_left, right=major_ticks_right)
-    plt.tick_params(which="minor", axis="y",direction="in", color=minor_ticks_color, width=minor_ticks_width, length=minor_ticks_length,  pad=minor_ticks_pad, left=minor_ticks_left, right=minor_ticks_right)
-
-    plt.ticklabel_format(axis="both", style="sci", scilimits=(-3,3))
-
-    ax.xaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
-    ax.yaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
-
-    return fig, ax
-
-
 def create_empty_figure_2D(xy_bounds, plot_settings, ax=None, fig=None,):
 
     # Get bounds in x and y
@@ -691,179 +551,6 @@ def bin_and_profile_2D(x_data, y_data, z_data, n_bins, xy_bounds,
     return x_values, y_values, z_values
 
 
-
-
-# def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray, 
-#                     x_label: str, n_bins: tuple, x_bounds = None, 
-#                     confidence_levels = [], y_fill_value = -1*np.finfo(float).max, 
-#                     y_is_loglike = True, plot_likelihood_ratio = True,
-#                     add_max_likelihood_marker = True,
-#                     fill_color_below_graph = True,
-#                     shaded_confidence_interval_bands=True,
-#                     plot_settings = gambit_plot_settings.plot_settings) -> None:
-
-#     # Sanity checks
-#     if not (x_data.shape == y_data.shape):
-#         raise Exception("All input arrays must have the same shape.")
-
-#     if not (len(x_data.shape) == len(y_data.shape) == 1):
-#         raise Exception("Input arrays must be one-dimensional.")
-
-#     # Number of points
-#     n_pts = x_data.shape[0]
-
-#     # Sort data according to y value, from highest to lowest
-#     p = np.argsort(y_data)
-#     p = p[::-1]
-#     x_data = x_data[p]
-#     y_data = y_data[p]
-
-#     # Get the highest and lowest z values
-#     y_max = y_data[0]
-#     y_min = y_data[-1]
-
-#     # Get plot bounds in x
-#     if x_bounds is None:
-#         x_bounds = (np.min(x_data), np.max(x_data))
-#     x_bounds[0] -= np.finfo(float).eps
-#     x_bounds[1] += np.finfo(float).eps
-#     x_min, x_max = x_bounds
-
-#     # Use loglike difference
-#     if y_is_loglike:
-#         y_data = y_data - y_max
-#         y_max = y_data[0]
-#         y_min = y_data[-1]
-
-#     # Bin and profile data
-#     x_values, y_values = bin_and_profile_1D(x_data, y_data, 
-#                                             n_bins, x_bounds,
-#                                             already_sorted=True, 
-#                                             y_fill_value=y_fill_value)
-
-#     # Convert from lnL - lnL_max = ln(L/Lmax) to L/Lmax 
-#     if y_is_loglike and plot_likelihood_ratio:
-#         y_values = np.exp(y_values)
-
-
-#     # Set y bound
-#     y_min = np.min(y_values)
-#     y_max = np.max(y_values)
-#     if (y_is_loglike) and (not plot_likelihood_ratio):
-#         y_min = 0.0
-#         y_max = 6.0
-#     if (y_is_loglike) and (plot_likelihood_ratio):
-#         y_min = 0.0
-#         y_max = 1.0
-
-#     # Create an empty figure using our plot settings
-#     xy_bounds = ([x_min, x_max], [y_min, y_max])
-#     fig, ax = create_empty_figure_1D(xy_bounds, plot_settings)
-
-#     # Axis labels
-#     y_label = "Likelihood"
-#     if (y_is_loglike) and (not plot_likelihood_ratio):
-#         y_label = "$\\ln L   - \\ln L_\\mathrm{max}$"
-#     if (y_is_loglike) and (plot_likelihood_ratio):
-#         y_label = "$\\textrm{Profile likelihood ratio}$ $\\Lambda = L/L_\\mathrm{max}$"
-
-#     fontsize = plot_settings["fontsize"]
-#     plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
-#     plt.ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
-#     plt.xticks(fontsize=fontsize)
-#     plt.yticks(fontsize=fontsize)
-
-#     # Determine confidence level lines
-#     cl_lines_y_vals = []
-#     if len(confidence_levels) > 0:
-#         cl_lines_y_vals = []
-#         if (y_is_loglike) and (not plot_likelihood_ratio):
-#             cl_lines_y_vals = get_1D_delta_loglike_levels(confidence_levels)
-#         if (y_is_loglike) and (plot_likelihood_ratio):
-#             cl_lines_y_vals = get_1D_likelihood_ratio_levels(confidence_levels)
-
-
-#     # Make a 1D profile likelihood plot
-
-#     # Fill?
-#     if fill_color_below_graph:
-#         plt.fill_between(
-#                 x=x_values, 
-#                 y1=y_values, 
-#                 color=plot_settings["1D_profile_likelihood_color"],
-#                 alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
-#                 linewidth=0.0)
-
-#     main_graph, = plt.plot(x_values, y_values, linestyle="solid", color=plot_settings["1D_profile_likelihood_color"])
-
-
-#     # Add shaded confidence interval bands?
-#     if shaded_confidence_interval_bands:
-
-#         for cl_line_y_val in cl_lines_y_vals:
-
-#             cl_line = matplotlib.lines.Line2D([x_min, x_max], [cl_line_y_val, cl_line_y_val])
-
-#             ip_up, ip_dn = get_intersection_points_from_lines(main_graph, cl_line)
-
-#             fill_starts_x = [ip[0] for ip in ip_up]
-#             fill_ends_x = [ip[0] for ip in ip_dn]
-
-#             fill_starts_y = [ip[1] for ip in ip_up]
-#             fill_ends_y = [ip[1] for ip in ip_dn]
-
-#             if y_values[0] > cl_line_y_val:
-#                 fill_starts_x = [x_min] + fill_starts_x 
-#                 fill_starts_y = [y_values[0]] + fill_starts_y 
-
-#             if len(fill_starts_x) == len(fill_ends_x) + 1:
-#                 fill_ends_x = fill_ends_x + [x_max]
-#                 fill_ends_y = fill_ends_y + [y_values[-1]]
-
-#             if len(fill_ends_x) == len(fill_starts_x) + 1:
-#                 fill_starts_x = [x_min] + fill_starts_x
-#                 fill_starts_y = [y_values[0]] + fill_starts_y
-
-#             if len(fill_starts_x) != len(fill_ends_x):
-#                 raise Exception("The lists fill_starts_x and fill_ends_x have different lengths. This should not happen.")
-
-#             for i in range(len(fill_starts_x)):
-                
-#                 x_start, x_end = fill_starts_x[i], fill_ends_x[i]
-#                 y_start, y_end = fill_starts_y[i], fill_ends_y[i]
-
-#                 use_x_values = np.array([x_start] + list(x_values[(x_values > x_start) & (x_values < x_end)]) + [x_end])
-#                 use_y_values = np.array([y_start] + list(y_values[(x_values > x_start) & (x_values < x_end)]) + [y_end])
-
-#                 plt.fill_between(
-#                         x=use_x_values, 
-#                         y1=use_y_values,
-#                         y2=y_min,
-#                         color=plot_settings["1D_profile_likelihood_color"],
-#                         alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
-#                         linewidth=0.0)
-
-
-#     # Draw confidence level lines
-#     if len(confidence_levels) > 0:
-
-#         for i,cl in enumerate(confidence_levels):
-#             cl_line_y_val = cl_lines_y_vals[i]
-#             ax.plot([x_min, x_max], [cl_line_y_val, cl_line_y_val], color=plot_settings["1D_profile_likelihood_color"], linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
-#             cl_text = f"${100*cl:.1f}\\%\\,$CL"
-#             ax.text(0.06, cl_line_y_val, cl_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"], 
-#                     color=plot_settings["1D_profile_likelihood_color"], transform = ax.transAxes)
-
-#     # Add a star at the max-likelihood point
-#     if (y_is_loglike and add_max_likelihood_marker):
-#         max_like_index = np.argmax(y_data)
-#         x_max_like = x_data[max_like_index]
-#         ax.scatter(x_max_like, 0.0, marker=plot_settings["max_likelihood_marker"], s=plot_settings["max_likelihood_marker_size"], c=plot_settings["max_likelihood_marker_color"],
-#                    edgecolor=plot_settings["max_likelihood_marker_edgecolor"], linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100, clip_on=False)
-
-#     # Return plot
-#     return fig, ax
-
 def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray, 
                     x_label: str, n_bins: tuple, x_bounds = None, 
                     confidence_levels = [], y_fill_value = -1*np.finfo(float).max, 
@@ -943,8 +630,8 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
     fontsize = plot_settings["fontsize"]
     ax.set_xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
     ax.set_ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
-    # ax.xticks(fontsize=fontsize)
-    # ax.yticks(fontsize=fontsize)
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
 
     # Determine confidence level lines
     cl_lines_y_vals = []
@@ -1117,9 +804,8 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     fontsize = plot_settings["fontsize"]
     ax.set_xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
     ax.set_ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
-    ## TODO: find out how to change the tick fontsize on ax
-    # ax.set_xticks(fontsize=fontsize)
-    # ax.yticks(fontsize=fontsize)
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
 
     # Create a color scale normalization
     norm = matplotlib.cm.colors.Normalize(vmin=cmap_vmin, vmax=cmap_vmax)
@@ -1249,9 +935,8 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
     fontsize = plot_settings["fontsize"]
     ax.set_xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
     ax.set_ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
-    ## TODO: find out how to change fontsize of the ticks on ax
-    # ax.xticks(fontsize=fontsize)
-    # ax.yticks(fontsize=fontsize)
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
 
     # Make a histogram of the 1D posterior distribution
     y_data = histogram
@@ -1347,9 +1032,8 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
     fontsize = plot_settings["fontsize"]
     ax.set_xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
     ax.set_ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
-    ## TODO: find out how to change the tick fontsize on ax
-    # ax.xticks(fontsize=fontsize)
-    # ax.yticks(fontsize=fontsize)
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
 
     # Create a color scale normalization
     norm = matplotlib.cm.colors.Normalize(vmin=cmap_vmin, vmax=cmap_vmax)

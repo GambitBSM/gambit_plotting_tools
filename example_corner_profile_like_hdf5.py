@@ -114,7 +114,7 @@ for z_key in z_keys:
     fig1 = plt.figure(figsize=(10,10))
 
     # grid divider (required to get a colorbar below the plots)
-    gs = gridspec.GridSpec(dim+1, dim, height_ratios=np.ones(dim).tolist()+[0.1], hspace=0.4, wspace=0.1)
+    gs = gridspec.GridSpec(dim+1, dim, height_ratios=np.ones(dim).tolist()+[0.1], hspace=0.5, wspace=0.1)
 
 
     for x, x_key in enumerate(x_keys):
