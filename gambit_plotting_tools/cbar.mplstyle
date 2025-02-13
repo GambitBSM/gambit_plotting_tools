@@ -1,0 +1,12 @@
+font.size: 11
+
+axes.edgecolor: black
+axes.labelpad: 18
+
+xtick.color: black
+ytick.color: black
+
+xtick.major.pad: 2
+xtick.minor.pad: 2
+ytick.major.pad: 2
+ytick.minor.pad: 2

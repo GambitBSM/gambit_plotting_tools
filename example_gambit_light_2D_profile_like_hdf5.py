@@ -5,7 +5,12 @@ import matplotlib.pyplot as plt
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 from gambit_plotting_tools.annotate import add_header
+from gambit_plotting_tools.gambit_colormaps import register_cmaps
 
+
+# Set styling
+register_cmaps()
+plt.style.use(['gambit_plotting_tools.gambit', 'gambit_plotting_tools.dark'])
 
 # 
 # Read file
@@ -64,15 +69,12 @@ xy_bounds = (x_bounds, y_bounds)
 # If a pretty plot label is not given, just use the key
 x_label = plot_labels.get(x_key, x_key)
 y_label = plot_labels.get(y_key, y_key)
-z_label = plot_labels.get(z_key, z_key)
-labels = (x_label, y_label, z_label)
 
 # Create 2D profile likelihood figure
 fig, ax, cbar_ax = plot_utils.plot_2D_profile(
     data[x_key], 
     data[y_key], 
     data[z_key], 
-    labels, 
     xy_bins, 
     xy_bounds=xy_bounds, 
     z_is_loglike=True,
@@ -82,6 +84,13 @@ fig, ax, cbar_ax = plot_utils.plot_2D_profile(
     add_max_likelihood_marker = True,
     plot_settings=plot_settings,
 )
+
+# Set limits and labels
+ax.set_xlim(*x_bounds)
+ax.set_ylim(*y_bounds)
+
+ax.set_xlabel(x_label)
+ax.set_ylabel(y_label)
 
 # Add header
 header_text = "$1\\sigma$ and $2\\sigma$ CL regions."

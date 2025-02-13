@@ -5,6 +5,12 @@ import matplotlib.pyplot as plt
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 from gambit_plotting_tools.annotate import add_gambit_header, add_gambit_logo
+from gambit_plotting_tools.gambit_colormaps import register_cmaps
+
+
+# Set styling
+register_cmaps()
+plt.style.use(['gambit_plotting_tools.gambit', 'gambit_plotting_tools.light'])
 
 # 
 # Read file
@@ -60,7 +66,6 @@ x_label = plot_labels.get(x_key, x_key)
 fig, ax = plot_utils.plot_1D_profile(
     data[x_key], 
     data[y_key], 
-    x_label, 
     x_bins, 
     x_bounds=x_bounds, 
     y_is_loglike=True,
@@ -73,8 +78,12 @@ fig, ax = plot_utils.plot_1D_profile(
     plot_settings=plot_settings,
 )
 
+# Set limits and labels
+ax.set_xlim(*x_bounds)
+ax.set_xlabel(x_label)
+
 # Add text
-fig.text(0.53, 0.85, "Example text", ha="left", va="center", fontsize=plot_settings["fontsize"], color="black")
+fig.text(0.53, 0.85, "Example text", ha="left", va="center")
 
 # Add branding
 add_gambit_header(ax=ax, version="2.5")

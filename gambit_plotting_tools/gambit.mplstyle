@@ -1,0 +1,61 @@
+image.interpolation: bilinear
+image.aspect: auto
+image.origin: lower
+
+contour.linewidth: 1.
+contour.negative_linestyle: solid
+
+figure.figsize: 4.92, 4.00
+figure.subplot.bottom: 0.16
+figure.subplot.top: 0.95
+figure.subplot.left: 0.19
+figure.subplot.right: 0.82
+figure.constrained_layout.use: True
+
+savefig.transparent: True
+
+axes.labelpad: 6
+axes.linewidth: 1.2
+axes.titlesize: 7
+axes.edgecolor: black
+axes.formatter.limits: -3, 3
+
+xtick.direction: in
+ytick.direction: in
+
+xtick.major.bottom: True
+xtick.major.top: True
+ytick.major.left: True
+ytick.major.right: True
+
+xtick.minor.bottom: True
+xtick.minor.top: True
+ytick.minor.left: True
+ytick.minor.right: True
+
+xtick.major.width: 0.85
+xtick.minor.width: 0.85
+ytick.major.width: 0.85
+ytick.minor.width: 0.85
+
+xtick.minor.visible: True
+ytick.minor.visible: True
+
+xtick.major.size: 10
+xtick.minor.size: 5
+ytick.major.size: 10
+ytick.minor.size: 5
+
+xtick.major.pad: 5
+xtick.minor.pad: 5
+ytick.major.pad: 5
+ytick.minor.pad: 5
+
+xtick.minor.ndivs: 4
+ytick.minor.ndivs: 4
+
+text.usetex: True
+
+font.family: serif
+font.serif: cm16
+font.size: 14

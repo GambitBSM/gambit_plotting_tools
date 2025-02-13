@@ -1,10 +1,12 @@
 import numpy as np
-from gambit_plotting_tools.gambit_colormaps import gambit_std_cmap
+from gambit_plotting_tools.gambit_colormaps import gambit_dark_cmap
 
+
+cbar = dict(orientation="vertical", location="right", shrink=0.9, pad=0.0)
 
 plot_settings = {
 
-    "colormap": gambit_std_cmap,
+    "colormap": gambit_dark_cmap,
     "interpolation": "bilinear",
 
     "framewidth": 1.2,

@@ -5,7 +5,12 @@ import matplotlib.pyplot as plt
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 from gambit_plotting_tools.annotate import add_header
+from gambit_plotting_tools.gambit_colormaps import register_cmaps
 
+
+# Set styling
+register_cmaps()
+plt.style.use(['gambit_plotting_tools.gambit', 'gambit_plotting_tools.dark'])
 
 # 
 # Read file
@@ -64,41 +69,45 @@ xy_bounds = (x_bounds, y_bounds)
 # If a pretty plot label is not given, just use the key
 x_label = plot_labels.get(x_key, x_key)
 y_label = plot_labels.get(y_key, y_key)
-z_label = plot_labels.get(z_key, z_key)
-labels = (x_label, y_label, z_label)
 
 # Create 2D profile likelihood figure
 fig, ax, cbar_ax = plot_utils.plot_2D_profile(
     data[x_key], 
     data[y_key], 
     data[z_key], 
-    labels, 
     xy_bins, 
     xy_bounds=xy_bounds, 
     z_is_loglike=True,
     plot_likelihood_ratio=True,
     contour_levels=likelihood_ratio_contour_values,
-    contour_coordinates_output_file=f"./plots/2D_profile__{x_key}__{y_key}__{z_key}__coordinates.csv",
+    #contour_coordinates_output_file=f"./plots/2D_profile__{x_key}__{y_key}__{z_key}__coordinates.csv",
     z_fill_value = -1*np.finfo(float).max,
     add_max_likelihood_marker = True,
     plot_settings=plot_settings,
 )
 
+# Set limits and labels
+ax.set_xlim(*x_bounds)
+ax.set_ylim(*y_bounds)
+
+ax.set_xlabel(x_label)
+ax.set_ylabel(y_label)
+
 # Add text
-fig.text(0.525, 0.350, "Example text", ha="left", va="center", fontsize=plot_settings["fontsize"], color="white")
+fig.text(0.525, 0.350, "Example text", ha="left", va="center")
 
 # Add header
 header_text = "$1\\sigma$ and $2\\sigma$ CL regions. \\textsf{GAMBIT} 2.5"
 add_header(header_text, ax=ax)
 
 # Add anything else to the plot, e.g. some more lines and labels and stuff
-ax.plot([20.0, 30.0], [5.0, 3.0], color="white", linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
-fig.text(0.53, 0.79, "A very important line!", ha="left", va="center", rotation=-31.5, fontsize=plot_settings["fontsize"]-5, color="white")
+ax.plot([20.0, 30.0], [5.0, 3.0], linestyle="dashed")
+fig.text(0.53, 0.79, "A very important line!", ha="left", va="center", rotation=-31.5, fontsize="x-small")
 
 # Draw a contour using coordinates stored in a .csv file
 x_contour, y_contour = np.loadtxt("./example_data/contour_coordinates.csv", delimiter=",", usecols=(0, 1), unpack=True)
 ax.plot(x_contour, y_contour, color="orange", linestyle="dashed", linewidth=plot_settings["contour_linewidth"], alpha=0.7)
-fig.text(0.23, 0.23, "Overlaid contour from\n coordinates in some data file", ha="left", va="center", fontsize=plot_settings["fontsize"]-5, color="orange")
+fig.text(0.23, 0.23, "Overlaid contour from\n coordinates in some data file", ha="left", va="center", fontsize="x-small", color="orange")
 
 # Save to file
 output_path = f"./plots/2D_profile__{x_key}__{y_key}__{z_key}.pdf"
