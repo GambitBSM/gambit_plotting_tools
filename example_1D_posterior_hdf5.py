@@ -5,7 +5,12 @@ import matplotlib.pyplot as plt
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 from gambit_plotting_tools.annotate import add_gambit_header
+from gambit_plotting_tools.gambit_colormaps import register_cmaps
 
+
+# Set styling
+register_cmaps()
+plt.style.use(['gambit_plotting_tools.gambit', 'gambit_plotting_tools.light'])
 
 # 
 # Read file
@@ -63,7 +68,6 @@ x_label = plot_labels.get(x_key, x_key)
 fig, ax = plot_utils.plot_1D_posterior(
     data[x_key], 
     data[posterior_weights_key], 
-    x_label, 
     x_bins, 
     x_bounds=x_bounds,
     credible_regions=credible_regions,
@@ -74,8 +78,12 @@ fig, ax = plot_utils.plot_1D_posterior(
     plot_settings=plot_settings,
 )
 
+# Set limits and labels
+ax.set_xlim(*x_bounds)
+ax.set_xlabel(x_label)
+
 # Add text
-fig.text(0.53, 0.85, "Example text", ha="left", va="center", fontsize=plot_settings["fontsize"], color="black")
+fig.text(0.53, 0.85, "Example text", ha="left", va="center")
 
 # Add header
 add_gambit_header(ax=ax, version="2.5")

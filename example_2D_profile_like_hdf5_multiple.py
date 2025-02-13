@@ -5,7 +5,12 @@ import matplotlib.pyplot as plt
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 from gambit_plotting_tools.annotate import add_header
+from gambit_plotting_tools.gambit_colormaps import register_cmaps
 
+
+# Set styling
+register_cmaps()
+plt.style.use(['gambit_plotting_tools.gambit', 'gambit_plotting_tools.dark'])
 
 # 
 # Read files

@@ -1,0 +1,13 @@
+xtick.color: white
+ytick.color: white
+xtick.labelcolor: black
+ytick.labelcolor: black
+
+axes.labelcolor: black
+axes.facecolor: 0.5
+axes.edgecolor: white
+
+image.cmap: gambit-dark
+
+lines.color: white
+text.color: white

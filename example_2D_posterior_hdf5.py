@@ -6,7 +6,12 @@ import matplotlib.pyplot as plt
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 from gambit_plotting_tools.annotate import add_header
+from gambit_plotting_tools.gambit_colormaps import register_cmaps
 
+
+# Set styling
+register_cmaps()
+plt.style.use(['gambit_plotting_tools.gambit', 'gambit_plotting_tools.light'])
 
 # 
 # Read file
@@ -67,14 +72,12 @@ xy_bounds = (x_bounds, y_bounds)
 # If a pretty plot label is not given, just use the key
 x_label = plot_labels.get(x_key, x_key)
 y_label = plot_labels.get(y_key, y_key)
-labels = (x_label, y_label)
 
 # Create 2D posterior figure
 fig, ax, cbar_ax = plot_utils.plot_2D_posterior(
     data[x_key], 
     data[y_key], 
     data[posterior_weights_key], 
-    labels, 
     xy_bins, 
     xy_bounds=xy_bounds,
     credible_regions=credible_regions,
@@ -84,16 +87,23 @@ fig, ax, cbar_ax = plot_utils.plot_2D_posterior(
     plot_settings=plot_settings,
 )
 
+# Set limits and labels
+ax.set_xlim(*x_bounds)
+ax.set_ylim(*y_bounds)
+
+ax.set_xlabel(x_label)
+ax.set_ylabel(y_label)
+
 # Add text
-fig.text(0.50, 0.30, "Example text", ha="left", va="center", fontsize=plot_settings["fontsize"], color="white")
+fig.text(0.50, 0.30, "Example text", ha="left", va="center")
 
 # Add header
 header_text = "$1\\sigma$ and $2\\sigma$ credible regions. \\textsf{GAMBIT} 2.5"
 add_header(header_text, ax=ax)
 
 # Add anything else to the plot, e.g. some more lines and labels and stuff
-ax.plot([20.0, 30.0], [5.0, 3.0], color="white", linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
-fig.text(0.53, 0.79, "A very important line!", ha="left", va="center", rotation=-31.5, fontsize=plot_settings["fontsize"]-5, color="white")
+ax.plot([20.0, 30.0], [5.0, 3.0], linestyle="dashed")
+fig.text(0.53, 0.79, "A very important line!", ha="left", va="center", rotation=-31.5)
 
 # Add a star marker at the maximum likelihood point
 max_like_index = np.argmax(data["LogLike"])

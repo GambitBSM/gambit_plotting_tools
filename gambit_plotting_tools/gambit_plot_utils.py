@@ -11,16 +11,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from pathlib import Path
 from scipy.special import gammaincinv
 
-from gambit_plotting_tools.gambit_colormaps import gambit_std_cmap
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
-
-plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": "serif",
-    "font.serif": "cm16",
-    "axes.linewidth": 0.1,
-    "axes.edgecolor": "black",
-})
 
 
 # Some quick ways to get contour levels for a given list of confidence levels (adapted from pippi)
@@ -43,7 +34,6 @@ def get_2D_delta_loglike_levels(confidence_levels):
     degrees_of_freedom = 2
     contour_levels = [-gammaincinv(0.5 * degrees_of_freedom, conf_level) for conf_level in confidence_levels]
     return contour_levels
-
 
 
 def create_folders_if_not_exist(file_path):
@@ -245,149 +235,6 @@ def save_contour_coordinates(contour, contour_coordinates_output_file, header=""
     print(f"Wrote file: {contour_coordinates_output_file}")
 
 
-
-def create_empty_figure_1D(xy_bounds, plot_settings):
-
-    # Get bounds in x and y
-    x_min, x_max = xy_bounds[0]
-    y_min, y_max = xy_bounds[1]
-
-    figwidth = plot_settings["figwidth"]
-    figheight = plot_settings["figheight"]
-    figheight_figwidth_ratio = figheight / figwidth
-    fig = plt.figure(figsize=(figwidth, figheight))
-
-    pad_left = plot_settings["pad_left"]
-    pad_right = plot_settings["pad_right"]
-    pad_bottom = plot_settings["pad_bottom"]
-    pad_top = plot_settings["pad_top"]
-
-    plot_width = 1.0 - pad_left - pad_right
-    plot_height = 1.0 - pad_bottom - pad_top
-
-    # Add axes 
-    left = pad_left
-    bottom = pad_bottom
-    ax = fig.add_axes((left, bottom, plot_width, plot_height), frame_on=True)
-    ax.set_facecolor(plot_settings["facecolor_plot_1D"])
-
-    # Set frame color and width
-    for spine in ax.spines.values():
-        spine.set_edgecolor(plot_settings["framecolor_plot_1D"])
-        spine.set_linewidth(plot_settings["framewidth_1D"])
-
-    # Axis ranges
-    plt.xlim([x_min, x_max])
-    plt.ylim([y_min, y_max])
-
-    # Minor ticks
-    ax.xaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(plot_settings["n_minor_ticks_per_major_tick"] + 1))
-    ax.yaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(plot_settings["n_minor_ticks_per_major_tick"] + 1))
-
-    # Tick parameters
-    major_ticks_color = plot_settings["major_ticks_color_1D"]
-    minor_ticks_color = plot_settings["minor_ticks_color_1D"]
-    major_ticks_width = plot_settings["major_ticks_width"]
-    minor_ticks_width = plot_settings["minor_ticks_width"]
-    major_ticks_length = plot_settings["major_ticks_length"]
-    minor_ticks_length = plot_settings["minor_ticks_length"]
-    major_ticks_pad = plot_settings["major_ticks_pad"]
-    minor_ticks_pad = plot_settings["minor_ticks_pad"]
-
-    major_ticks_bottom = plot_settings["major_ticks_bottom"]
-    major_ticks_top = plot_settings["major_ticks_top"]
-    major_ticks_left = plot_settings["major_ticks_left"]
-    major_ticks_right = plot_settings["major_ticks_right"]
-    minor_ticks_bottom = plot_settings["minor_ticks_bottom"]
-    minor_ticks_top = plot_settings["minor_ticks_top"]
-    minor_ticks_left = plot_settings["minor_ticks_left"]
-    minor_ticks_right = plot_settings["minor_ticks_right"]
-
-    plt.tick_params(which="major", axis="x",direction="in", color=major_ticks_color, width=major_ticks_width, length=major_ticks_length, pad=major_ticks_pad, bottom=major_ticks_bottom, top=major_ticks_top)
-    plt.tick_params(which="minor", axis="x",direction="in", color=minor_ticks_color, width=minor_ticks_width, length=minor_ticks_length,  pad=minor_ticks_pad, bottom=minor_ticks_bottom, top=minor_ticks_top)
-    plt.tick_params(which="major", axis="y",direction="in", color=major_ticks_color, width=major_ticks_width, length=major_ticks_length, pad=major_ticks_pad, left=major_ticks_left, right=major_ticks_right)
-    plt.tick_params(which="minor", axis="y",direction="in", color=minor_ticks_color, width=minor_ticks_width, length=minor_ticks_length,  pad=minor_ticks_pad, left=minor_ticks_left, right=minor_ticks_right)
-
-    plt.ticklabel_format(axis="both", style="sci", scilimits=(-3,3))
-
-    ax.xaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
-    ax.yaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
-
-    return fig, ax
-
-
-
-def create_empty_figure_2D(xy_bounds, plot_settings):
-
-    # Get bounds in x and y
-    x_min, x_max = xy_bounds[0]
-    y_min, y_max = xy_bounds[1]
-
-    figwidth = plot_settings["figwidth"]
-    figheight = plot_settings["figheight"]
-    figheight_figwidth_ratio = figheight / figwidth
-    fig = plt.figure(figsize=(figwidth, figheight))
-
-    pad_left = plot_settings["pad_left"]
-    pad_right = plot_settings["pad_right"]
-    pad_bottom = plot_settings["pad_bottom"]
-    pad_top = plot_settings["pad_top"]
-
-    plot_width = 1.0 - pad_left - pad_right
-    plot_height = 1.0 - pad_bottom - pad_top
-
-    # Add axes 
-    left = pad_left
-    bottom = pad_bottom
-    ax = fig.add_axes((left, bottom, plot_width, plot_height), frame_on=True)
-    ax.set_facecolor(plot_settings["facecolor_plot"])
-
-    # Set frame color and width
-    for spine in ax.spines.values():
-        spine.set_edgecolor(plot_settings["framecolor_plot"])
-        spine.set_linewidth(plot_settings["framewidth"])
-
-    # Axis ranges
-    plt.xlim([x_min, x_max])
-    plt.ylim([y_min, y_max])
-
-    # Minor ticks
-    ax.xaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(plot_settings["n_minor_ticks_per_major_tick"] + 1))
-    ax.yaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(plot_settings["n_minor_ticks_per_major_tick"] + 1))
-
-    # Tick parameters
-    major_ticks_color = plot_settings["major_ticks_color"]
-    minor_ticks_color = plot_settings["minor_ticks_color"]
-    major_ticks_width = plot_settings["major_ticks_width"]
-    minor_ticks_width = plot_settings["minor_ticks_width"]
-    major_ticks_length = plot_settings["major_ticks_length"]
-    minor_ticks_length = plot_settings["minor_ticks_length"]
-    major_ticks_pad = plot_settings["major_ticks_pad"]
-    minor_ticks_pad = plot_settings["minor_ticks_pad"]
-
-    major_ticks_bottom = plot_settings["major_ticks_bottom"]
-    major_ticks_top = plot_settings["major_ticks_top"]
-    major_ticks_left = plot_settings["major_ticks_left"]
-    major_ticks_right = plot_settings["major_ticks_right"]
-    minor_ticks_bottom = plot_settings["minor_ticks_bottom"]
-    minor_ticks_top = plot_settings["minor_ticks_top"]
-    minor_ticks_left = plot_settings["minor_ticks_left"]
-    minor_ticks_right = plot_settings["minor_ticks_right"]
-
-    plt.tick_params(which="major", axis="x",direction="in", color=major_ticks_color, width=major_ticks_width, length=major_ticks_length, pad=major_ticks_pad, bottom=major_ticks_bottom, top=major_ticks_top)
-    plt.tick_params(which="minor", axis="x",direction="in", color=minor_ticks_color, width=minor_ticks_width, length=minor_ticks_length,  pad=minor_ticks_pad, bottom=minor_ticks_bottom, top=minor_ticks_top)
-    plt.tick_params(which="major", axis="y",direction="in", color=major_ticks_color, width=major_ticks_width, length=major_ticks_length, pad=major_ticks_pad, left=major_ticks_left, right=major_ticks_right)
-    plt.tick_params(which="minor", axis="y",direction="in", color=minor_ticks_color, width=minor_ticks_width, length=minor_ticks_length,  pad=minor_ticks_pad, left=minor_ticks_left, right=minor_ticks_right)
-
-    plt.ticklabel_format(axis="both", style="sci", scilimits=(-3,3))
-
-    ax.xaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
-    ax.yaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
-
-    return fig, ax
-
-
-
 def bin_and_profile_1D(x_data, y_data, n_bins, x_bounds, 
                        already_sorted=False, 
                        y_fill_value=-1*np.finfo(float).max):
@@ -552,20 +399,31 @@ def bin_and_profile_2D(x_data, y_data, z_data, n_bins, xy_bounds,
 
 
 def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray, 
-                    x_label: str, n_bins: tuple, x_bounds = None, 
+                    n_bins: int, 
+                    ax=None,
+                    x_bounds = None, 
                     confidence_levels = [], y_fill_value = -1*np.finfo(float).max, 
                     y_is_loglike = True, plot_likelihood_ratio = True,
                     add_max_likelihood_marker = True,
                     fill_color_below_graph = True,
                     shaded_confidence_interval_bands=True,
                     plot_settings = gambit_plot_settings.plot_settings) -> None:
-
+    """
+    Add 1D profile likelihood to a plot
+    
+    @param ax matplotlib axes instance or current axis
+    """
     # Sanity checks
     if not (x_data.shape == y_data.shape):
         raise Exception("All input arrays must have the same shape.")
 
     if not (len(x_data.shape) == len(y_data.shape) == 1):
         raise Exception("Input arrays must be one-dimensional.")
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
 
     # Number of points
     n_pts = x_data.shape[0]
@@ -614,22 +472,15 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
         y_min = 0.0
         y_max = 1.0
 
-    # Create an empty figure using our plot settings
     xy_bounds = ([x_min, x_max], [y_min, y_max])
-    fig, ax = create_empty_figure_1D(xy_bounds, plot_settings)
-
+    
     # Axis labels
-    y_label = "Likelihood"
-    if (y_is_loglike) and (not plot_likelihood_ratio):
-        y_label = "$\\ln L   - \\ln L_\\mathrm{max}$"
-    if (y_is_loglike) and (plot_likelihood_ratio):
-        y_label = "$\\textrm{Profile likelihood ratio}$ $\\Lambda = L/L_\\mathrm{max}$"
-
-    fontsize = plot_settings["fontsize"]
-    plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
-    plt.ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
-    plt.xticks(fontsize=fontsize)
-    plt.yticks(fontsize=fontsize)
+    if not y_is_loglike:
+        ax.set_ylabel("Likelihood")
+    elif not plot_likelihood_ratio:
+        ax.set_ylabel("$\\ln L   - \\ln L_\\mathrm{max}$")
+    else:
+       ax.set_ylabel("$\\textrm{Profile likelihood ratio}$ $\\Lambda = L/L_\\mathrm{max}$")
 
     # Determine confidence level lines
     cl_lines_y_vals = []
@@ -645,14 +496,14 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
 
     # Fill?
     if fill_color_below_graph:
-        plt.fill_between(
+        ax.fill_between(
                 x=x_values, 
                 y1=y_values, 
                 color=plot_settings["1D_profile_likelihood_color"],
                 alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
                 linewidth=0.0)
 
-    main_graph, = plt.plot(x_values, y_values, linestyle="solid", color=plot_settings["1D_profile_likelihood_color"])
+    main_graph, = ax.plot(x_values, y_values, linestyle="solid", color=plot_settings["1D_profile_likelihood_color"])
 
 
     # Add shaded confidence interval bands?
@@ -693,7 +544,7 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
                 use_x_values = np.array([x_start] + list(x_values[(x_values > x_start) & (x_values < x_end)]) + [x_end])
                 use_y_values = np.array([y_start] + list(y_values[(x_values > x_start) & (x_values < x_end)]) + [y_end])
 
-                plt.fill_between(
+                ax.fill_between(
                         x=use_x_values, 
                         y1=use_y_values,
                         y2=y_min,
@@ -726,19 +577,29 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
 
 
 def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray, 
-                    labels: tuple, n_bins: tuple, xy_bounds = None, 
+                    n_bins: tuple,
+                    ax=None, xy_bounds = None, 
                     contour_levels = [], contour_coordinates_output_file = None,
                     z_fill_value = -1*np.finfo(float).max, 
                     z_is_loglike = True, plot_likelihood_ratio = True,
                     add_max_likelihood_marker = True,
                     plot_settings = gambit_plot_settings.plot_settings) -> None:
-
+    """
+    Add 2D profile likelihood to a plot
+    
+    @param ax matplotlib axes instance or current axis
+    """
     # Sanity checks
     if not (x_data.shape == y_data.shape == z_data.shape):
         raise Exception("All input arrays must have the same shape.")
 
     if not (len(x_data.shape) == len(y_data.shape) == len(z_data.shape) == 1):
         raise Exception("Input arrays must be one-dimensional.")
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
 
     # Number of points
     n_pts = x_data.shape[0]
@@ -790,19 +651,6 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
         cmap_vmin = z_max - 9.0
         cmap_vmax = z_max
 
-    # Create an empty figure using our plot settings
-    fig, ax = create_empty_figure_2D(xy_bounds, plot_settings)
-
-    # Axis labels
-    x_label = labels[0]
-    y_label = labels[1]
-
-    fontsize = plot_settings["fontsize"]
-    plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
-    plt.ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
-    plt.xticks(fontsize=fontsize)
-    plt.yticks(fontsize=fontsize)
-
     # Create a color scale normalization
     norm = matplotlib.cm.colors.Normalize(vmin=cmap_vmin, vmax=cmap_vmax)
 
@@ -812,14 +660,12 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     x_values = x_values.reshape(n_ybins, n_xbins)
     y_values = y_values.reshape(n_ybins, n_xbins)
     z_values = z_values.reshape(n_ybins, n_xbins)
-    im = ax.imshow(z_values, interpolation=plot_settings["interpolation"], aspect="auto", extent=[x_min, x_max, y_min, y_max],
-                   cmap=plot_settings["colormap"], norm=norm, origin="lower")
+    im = ax.imshow(z_values, extent=[x_min, x_max, y_min, y_max], norm=norm)
 
     # Draw contours?
     if len(contour_levels) > 0:
         contour_levels.sort()
-        contour = ax.contour(x_values, y_values, z_values, contour_levels, colors=plot_settings["contour_color"], 
-                             linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), linestyles=plot_settings["contour_linestyle"])
+        contour = ax.contour(x_values, y_values, z_values, contour_levels, colors=plt.rcParams['lines.color'], linestyles=plt.rcParams['lines.linestyle'])
 
         # Save contour coordinates to file?
         if contour_coordinates_output_file != None:
@@ -836,45 +682,48 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
                    edgecolor=plot_settings["max_likelihood_marker_edgecolor"], linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100)
 
     # Add a colorbar
-    cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"], height=plot_settings["colorbar_height"], loc=plot_settings["colorbar_loc"], borderpad=plot_settings["colorbar_borderpad"])
-    cbar = fig.colorbar(im, cax=cbar_ax, orientation=plot_settings["colorbar_orientation"])
+    with plt.style.context('gambit_plotting_tools.cbar'):
 
-    cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
-    cbar.outline.set_linewidth(plot_settings["framewidth"])
-
-    cbar.set_ticks(np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_major_ticks"]), minor=False)
-    cbar.set_ticks(np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_minor_ticks"]), minor=True)
-
-    cbar.ax.tick_params(which="major", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
-    cbar.ax.tick_params(which="minor", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
-
-    cbar_label = labels[2]
-    if (z_is_loglike) and (not plot_likelihood_ratio):
-        cbar_label = "$\\ln L   - \\ln L_\\mathrm{max}$"
-    if (z_is_loglike) and (plot_likelihood_ratio):
-        cbar_label = "$\\textrm{Profile likelihood ratio}$ $\\Lambda = L/L_\\mathrm{max}$"
-    cbar.set_label(cbar_label, fontsize=plot_settings["colorbar_label_fontsize"], labelpad=plot_settings["colorbar_label_pad"], rotation=plot_settings["colorbar_label_rotation"])
+        cbar = fig.colorbar(im, ax=ax, **gambit_plot_settings.cbar)
+    
+        if not z_is_loglike:
+            cbar.set_label("Likelihood", rotation=plot_settings["colorbar_label_rotation"])
+        elif not plot_likelihood_ratio:
+            cbar.set_label("$\\ln L   - \\ln L_\\mathrm{max}$", rotation=plot_settings["colorbar_label_rotation"])
+        else:
+            cbar.set_label("$\\textrm{Profile likelihood ratio}$ $\\Lambda = L/L_\\mathrm{max}$", rotation=plot_settings["colorbar_label_rotation"])
 
     # Return plot
-    return fig, ax, cbar_ax
+    return fig, ax, cbar
 
 
 
 
 def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray, 
-                      x_label: str, n_bins: tuple, x_bounds = None, 
+                      n_bins: tuple,
+                      ax=None, 
+                      x_bounds = None, 
                       credible_regions = [], plot_relative_probability = True, 
                       add_mean_posterior_marker = True,
                       fill_color_below_graph=False,
                       shaded_credible_region_bands = True,
                       plot_settings = gambit_plot_settings.plot_settings) -> None:
-
+    """
+    Add 1D posterior to a plot
+    
+    @param ax matplotlib axes instance or current axis
+    """
     # Sanity checks
     if not (x_data.shape == posterior_weights.shape):
         raise Exception("All input arrays must have the same shape.")
 
     if not (len(x_data.shape) == len(posterior_weights.shape) == 1):
         raise Exception("Input arrays must be one-dimensional.")
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
 
     # Number of points
     n_pts = x_data.shape[0]
@@ -896,20 +745,13 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
     if not plot_relative_probability:
         y_max = np.max(histogram)
 
-    # Create an empty figure using our plot settings
     xy_bounds = ([x_min, x_max], [y_min, y_max])
-    fig, ax = create_empty_figure_1D(xy_bounds, plot_settings)
 
     # Axis labels
-    y_label = "Posterior probability"
     if plot_relative_probability:
-        y_label = "Relative probability $P/P_{\\mathrm{max}}$"
-
-    fontsize = plot_settings["fontsize"]
-    plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
-    plt.ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
-    plt.xticks(fontsize=fontsize)
-    plt.yticks(fontsize=fontsize)
+        ax.set_ylabel( "Relative probability $P/P_{\\mathrm{max}}$")
+    else:
+        ax.set_ylabel("Posterior probability")
 
     # Make a histogram of the 1D posterior distribution
     y_data = histogram
@@ -917,8 +759,8 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
         y_data = y_data / np.max(y_data)
 
     if fill_color_below_graph:
-        plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
-    plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="step", color=plot_settings["1D_posterior_color"])
+        ax.hist(x_edges[:-1], n_bins, weights=y_data, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
+    ax.hist(x_edges[:-1], n_bins, weights=y_data, histtype="step", color=plot_settings["1D_posterior_color"])
 
     # Draw credible region lines?
     if len(credible_regions) > 0:
@@ -938,7 +780,7 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
             if shaded_credible_region_bands:
                 new_y_data = deepcopy(y_data)
                 new_y_data[new_y_data < line_y_val] = 0.0
-                plt.hist(x_edges[:-1], n_bins, weights=new_y_data, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
+                ax.hist(x_edges[:-1], n_bins, weights=new_y_data, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
 
     # Add marker at the mean posterior point
     if add_mean_posterior_marker:
@@ -953,19 +795,29 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
 
 
 def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights: np.ndarray, 
-                      labels: tuple, n_bins: tuple, xy_bounds = None, 
+                      n_bins: tuple,
+                      ax=None, xy_bounds = None, 
                       credible_regions = [], 
                       contour_coordinates_output_file = None,
                       plot_relative_probability = True, 
                       add_mean_posterior_marker = True,
                       plot_settings = gambit_plot_settings.plot_settings) -> None:
-
+    """
+    Add 2D posterior to a plot
+    
+    @param ax matplotlib axes instance or current axis
+    """
     # Sanity checks
     if not (x_data.shape == y_data.shape == posterior_weights.shape):
         raise Exception("All input arrays must have the same shape.")
 
     if not (len(x_data.shape) == len(y_data.shape) == len(posterior_weights.shape) == 1):
         raise Exception("Input arrays must be one-dimensional.")
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
 
     # Number of points
     n_pts = x_data.shape[0]
@@ -991,19 +843,6 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
     if (plot_relative_probability):
         cmap_vmax = 1.0
 
-    # Create an empty figure using our plot settings
-    fig, ax = create_empty_figure_2D(xy_bounds, plot_settings)
-
-    # Axis labels
-    x_label = labels[0]
-    y_label = labels[1]
-
-    fontsize = plot_settings["fontsize"]
-    plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
-    plt.ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
-    plt.xticks(fontsize=fontsize)
-    plt.yticks(fontsize=fontsize)
-
     # Create a color scale normalization
     norm = matplotlib.cm.colors.Normalize(vmin=cmap_vmin, vmax=cmap_vmax)
 
@@ -1013,8 +852,7 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
     if plot_relative_probability:
         z_data = z_data / np.max(z_data)
 
-    im = ax.imshow(z_data, interpolation=plot_settings["interpolation"], aspect="auto", extent=[x_min, x_max, y_min, y_max],
-                   cmap=plot_settings["colormap"], norm=norm, origin="lower")
+    im = ax.imshow(z_data, extent=[x_min, x_max, y_min, y_max], norm=norm)
 
     # Draw credible region contours?
     contour_levels = []
@@ -1031,8 +869,7 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
         contour_levels.sort()
 
         # Draw the contours
-        contour = ax.contour(X, Y, histogram.T, contour_levels, colors=plot_settings["contour_color"], 
-                             linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), linestyles=plot_settings["contour_linestyle"])
+        contour = ax.contour(X, Y, histogram.T, contour_levels, colors=plt.rcParams['lines.color'], linestyles=plt.rcParams['lines.linestyle'])
 
         # Save contour coordinates to file?
         if contour_coordinates_output_file != None:
@@ -1048,25 +885,18 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
                    edgecolor=plot_settings["posterior_mean_marker_edgecolor"], linewidth=plot_settings["posterior_mean_marker_linewidth"], zorder=100)
 
     # Add a colorbar
-    cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"], height=plot_settings["colorbar_height"], loc=plot_settings["colorbar_loc"], borderpad=plot_settings["colorbar_borderpad"])
-    cbar = fig.colorbar(im, cax=cbar_ax, orientation=plot_settings["colorbar_orientation"])
+    
+    with plt.style.context('gambit_plotting_tools.cbar'):
 
-    cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
-    cbar.outline.set_linewidth(plot_settings["framewidth"])
+        cbar = fig.colorbar(im, ax=ax, **gambit_plot_settings.cbar)
 
-    cbar.set_ticks(np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_major_ticks"]), minor=False)
-    cbar.set_ticks(np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_minor_ticks"]), minor=True)
-
-    cbar.ax.tick_params(which="major", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
-    cbar.ax.tick_params(which="minor", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
-
-    cbar_label = "Posterior probability"
-    if (plot_relative_probability):
-        cbar_label = "Relative probability $P/P_{\\mathrm{max}}$"
-    cbar.set_label(cbar_label, fontsize=plot_settings["colorbar_label_fontsize"], labelpad=plot_settings["colorbar_label_pad"], rotation=plot_settings["colorbar_label_rotation"])
+        if plot_relative_probability:
+            cbar.set_label("Relative probability $P/P_{\\mathrm{max}}$", rotation=plot_settings["colorbar_label_rotation"])
+        else:
+            cbar.set_label("Posterior probability", rotation=plot_settings["colorbar_label_rotation"])
 
     # Return plot
-    return fig, ax, cbar_ax
+    return fig, ax, cbar
 
 
 
@@ -1114,10 +944,3 @@ def nearest_neighbor_averaging(hdf5_file_and_group_names, target_dataset, NN_ins
         mean_target_per_group[i] = np.mean(data[target_dataset][group_indices])
 
     return mean_target_per_group
-
-
-
-
-
-
-

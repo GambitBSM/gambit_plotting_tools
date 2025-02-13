@@ -7,7 +7,12 @@ import matplotlib.pyplot as plt
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 from gambit_plotting_tools.annotate import add_header
+from gambit_plotting_tools.gambit_colormaps import register_cmaps
 
+
+# Set styling
+register_cmaps()
+plt.style.use(['gambit_plotting_tools.gambit', 'gambit_plotting_tools.dark'])
 
 # 
 # Read data file
@@ -60,22 +65,21 @@ xy_bins = (70, 70)
 
 # Load default plot settings and make some adjustments
 plot_settings = deepcopy(gambit_plot_settings.plot_settings)
-plot_settings["colormap"] = matplotlib.colormaps["plasma"]
-plot_settings["interpolation"] = "none"
 
 # If variable bounds are not specified, use the full range from the data
 x_bounds = dataset_bounds.get(x_key, [np.min(data[x_key]), np.max(data[x_key])])
 y_bounds = dataset_bounds.get(y_key, [np.min(data[y_key]), np.max(data[y_key])])
 xy_bounds = (x_bounds, y_bounds)
 
-labels = (plot_labels[x_key], plot_labels[y_key], plot_labels[z_key])
+# If a pretty plot label is not given, just use the key
+x_label = plot_labels.get(x_key, x_key)
+y_label = plot_labels.get(y_key, y_key)
 
 # Create 2D profile likelihood figure
 fig, ax, cbar_ax = plot_utils.plot_2D_profile(
     data[x_key], 
     data[y_key], 
     data[z_key], 
-    labels,
     xy_bins, 
     xy_bounds=xy_bounds, 
     z_is_loglike=True,
@@ -86,16 +90,23 @@ fig, ax, cbar_ax = plot_utils.plot_2D_profile(
     plot_settings=plot_settings,
 )
 
+# Set limits and labels
+ax.set_xlim(*x_bounds)
+ax.set_ylim(*y_bounds)
+
+ax.set_xlabel(x_label)
+ax.set_ylabel(y_label)
+
 # Add text
-fig.text(0.27, 0.83, "Example text", ha="left", va="center", fontsize=plot_settings["fontsize"], color="white")
+fig.text(0.27, 0.83, "Example text", ha="left", va="center",)
 
 # Add header
 header_text = "$1\\sigma$ and $2\\sigma$ CL regions. \\textsf{GAMBIT} 2.5"
 add_header(header_text, ax=ax)
 
 # Add anything else to the plot, e.g. some more lines and labels and stuff
-ax.plot([0.0, 1.0], [0.0, 1.0], color="white", linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
-fig.text(0.25, 0.35, "A very important line!", ha="left", va="center", rotation=59.5, fontsize=plot_settings["fontsize"]-5, color="white")
+ax.plot([0.0, 1.0], [0.0, 1.0], linestyle="dashed")
+fig.text(0.25, 0.35, "A very important line!", ha="left", va="center", rotation=59.5, fontsize="x-small")
 
 # Save to file
 output_path = f"./plots/2D_profile__{x_key}__{y_key}__{z_key}.pdf"
