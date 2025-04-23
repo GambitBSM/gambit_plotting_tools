@@ -726,7 +726,7 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
 
 
 def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray, 
-                    labels: tuple, n_bins: tuple, xy_bounds = None, 
+                    labels: tuple, n_bins: tuple, xy_bounds = None, z_bounds = None,
                     contour_levels = [], contour_coordinates_output_file = None,
                     z_fill_value = -1*np.finfo(float).max, 
                     z_is_loglike = True, plot_likelihood_ratio = True,
@@ -781,14 +781,12 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
         z_values = np.exp(z_values)
 
     # Colorbar range
-    cmap_vmin = z_min
-    cmap_vmax = z_max
-    if (z_is_loglike) and (plot_likelihood_ratio):
-        cmap_vmin = 0.0
-        cmap_vmax = 1.0
-    if (z_is_loglike) and (not plot_likelihood_ratio):
-        cmap_vmin = z_max - 9.0
-        cmap_vmax = z_max
+    if z_bounds is None:
+        z_bounds = (z_min, z_max)
+        if (z_is_loglike) and (plot_likelihood_ratio):
+            z_bounds = (0.0, 1.0)
+        if (z_is_loglike) and (not plot_likelihood_ratio):
+            z_bounds = (z_max - 9.0, z_max)
 
     # Create an empty figure using our plot settings
     fig, ax = create_empty_figure_2D(xy_bounds, plot_settings)
@@ -804,7 +802,7 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     plt.yticks(fontsize=fontsize)
 
     # Create a color scale normalization
-    norm = matplotlib.cm.colors.Normalize(vmin=cmap_vmin, vmax=cmap_vmax)
+    norm = matplotlib.cm.colors.Normalize(vmin=z_bounds[0], vmax=z_bounds[1])
 
     # Make color plot of the profile loglike
     n_xbins = n_bins[0]
@@ -842,8 +840,8 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
     cbar.outline.set_linewidth(plot_settings["framewidth"])
 
-    cbar.set_ticks(np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_major_ticks"]), minor=False)
-    cbar.set_ticks(np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_minor_ticks"]), minor=True)
+    cbar.set_ticks(np.linspace(z_bounds[0], z_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
+    cbar.set_ticks(np.linspace(z_bounds[0], z_bounds[1], plot_settings["colorbar_n_minor_ticks"]), minor=True)
 
     cbar.ax.tick_params(which="major", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
     cbar.ax.tick_params(which="minor", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
