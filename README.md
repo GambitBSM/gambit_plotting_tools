@@ -11,6 +11,10 @@ Simply install using `pip`:
 pip install git+https://github.com/GambitBSM/gambit_plotting_tools.git
 ```
 
+## LaTeX text rendering
+
+By default this package will attempt to use Matplotlib's functionality for [rendering text using LaTeX](https://matplotlib.org/stable/users/explain/text/usetex.html). A warning will be printed if the libraries required for LaTeX rendering are not found. In that case it will fall back to using Matplotlib's own [mathtext](https://matplotlib.org/stable/gallery/text_labels_and_annotations/mathtext_demo.html) functionality, and to get some decent-looking plots you probably should tweak font sizes, etc.
+
 
 ## Examples
 

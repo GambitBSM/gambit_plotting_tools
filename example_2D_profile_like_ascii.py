@@ -49,10 +49,9 @@ dataset_bounds = {
 
 # Specify some pretty plot labels?
 plot_labels = {
-    "p1": "$p_1$ (unit)",
-    "p2": "$p_2$ (unit)",
-    "p3": "$p_3$ (unit)",
-    "lnL": "$\\ln(L)$",
+    "p1": r"$p_1$ (unit)",
+    "p2": r"$p_2$ (unit)",
+    "p3": r"$p_3$ (unit)",
 }
 
 # Number of bins used for profiling
@@ -90,7 +89,11 @@ fig, ax, cbar_ax = plot_utils.plot_2D_profile(
 fig.text(0.27, 0.83, "Example text", ha="left", va="center", fontsize=plot_settings["fontsize"], color="white")
 
 # Add header
-header_text = "$1\\sigma$ and $2\\sigma$ CL regions. \\textsf{GAMBIT} 2.5"
+header_text = r"$1\sigma$ and $2\sigma$ CL regions." 
+if plt.rcParams.get("text.usetex"):
+    header_text += r" \textsf{GAMBIT} 2.5"
+else:
+    header_text += r" GAMBIT 2.5"
 add_header(header_text, ax=ax)
 
 # Add anything else to the plot, e.g. some more lines and labels and stuff

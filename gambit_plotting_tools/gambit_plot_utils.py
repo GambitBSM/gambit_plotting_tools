@@ -1,6 +1,7 @@
 from copy import deepcopy
 from collections import OrderedDict
 import os
+import shutil
 import numpy as np
 import h5py
 import matplotlib
@@ -14,10 +15,23 @@ from scipy.special import gammaincinv
 from gambit_plotting_tools.gambit_colormaps import gambit_std_cmap
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 
+
+# Check if LaTeX rendering is supported by looking for the commands 'latex', 'dvipng' and 'gs'
+tex_required_tools = ("latex", "dvipng", "gs")
+tex_support_detected = all(shutil.which(cmd) for cmd in tex_required_tools)
+if tex_support_detected:
+    plt.rcParams.update({
+        "text.usetex": True,
+        "font.family": "serif",
+        "font.serif": "cm16",
+    })
+else:
+    print(f"gambit_plot_utils: Text rendering with LaTeX will be disabled as one of "
+            "the tools {tex_required_tools} was not found. Make sure to use Matplotlib's "
+            "mathtext syntax for the text labels in your plotting script.")
+
+# Set some axes defaults 
 plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": "serif",
-    "font.serif": "cm16",
     "axes.linewidth": 0.1,
     "axes.edgecolor": "black",
 })
@@ -229,12 +243,18 @@ def save_contour_coordinates(contour, contour_coordinates_output_file, header=""
     coordinates = []
 
     # Iterate over each contour line
-    for collection in contour.collections:
-        for path in collection.get_paths():
-            vertices = path.vertices
-            coordinates.append(vertices)
-            # Use NaN separator to mark contour breaks
-            coordinates.append(np.array([[np.nan, np.nan]]))
+    for path in contour.get_paths():
+        vertices = path.vertices
+        coordinates.append(vertices)
+        # Use NaN separator to mark contour breaks
+        coordinates.append(np.array([[np.nan, np.nan]]))
+
+    # for collection in contour.collections:
+    #     for path in collection.get_paths():
+    #         vertices = path.vertices
+    #         coordinates.append(vertices)
+    #         # Use NaN separator to mark contour breaks
+    #         coordinates.append(np.array([[np.nan, np.nan]]))
 
     # Concatenate all coordinate arrays into one
     coordinates = np.vstack(coordinates)
@@ -555,8 +575,7 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
                     x_label: str, n_bins: tuple, x_bounds = None, 
                     confidence_levels = [], y_fill_value = -1*np.finfo(float).max, 
                     y_is_loglike = True, plot_likelihood_ratio = True,
-                    add_max_likelihood_marker = True,
-                    fill_color_below_graph = True,
+                    add_max_likelihood_marker = True, fill_color_below_graph = True, 
                     shaded_confidence_interval_bands=True,
                     plot_settings = gambit_plot_settings.plot_settings) -> None:
 
@@ -621,9 +640,9 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
     # Axis labels
     y_label = "Likelihood"
     if (y_is_loglike) and (not plot_likelihood_ratio):
-        y_label = "$\\ln L   - \\ln L_\\mathrm{max}$"
+        y_label = r"$\ln L   - \ln L_{\mathrm{max}}$"
     if (y_is_loglike) and (plot_likelihood_ratio):
-        y_label = "$\\textrm{Profile likelihood ratio}$ $\\Lambda = L/L_\\mathrm{max}$"
+        y_label = r"Profile likelihood ratio $\Lambda = L/L_{\mathrm{max}}$"
 
     fontsize = plot_settings["fontsize"]
     plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
@@ -848,9 +867,9 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
 
     cbar_label = labels[2]
     if (z_is_loglike) and (not plot_likelihood_ratio):
-        cbar_label = "$\\ln L   - \\ln L_\\mathrm{max}$"
+        cbar_label = r"$\ln L   - \ln L_{\mathrm{max}}$"
     if (z_is_loglike) and (plot_likelihood_ratio):
-        cbar_label = "$\\textrm{Profile likelihood ratio}$ $\\Lambda = L/L_\\mathrm{max}$"
+        cbar_label = r"Profile likelihood ratio $\Lambda = L/L_{\mathrm{max}}$"
     cbar.set_label(cbar_label, fontsize=plot_settings["colorbar_label_fontsize"], labelpad=plot_settings["colorbar_label_pad"], rotation=plot_settings["colorbar_label_rotation"])
 
     # Return plot
@@ -901,7 +920,7 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
     # Axis labels
     y_label = "Posterior probability"
     if plot_relative_probability:
-        y_label = "Relative probability $P/P_{\\mathrm{max}}$"
+        y_label = r"Relative probability $P/P_{\mathrm{max}}$"
 
     fontsize = plot_settings["fontsize"]
     plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
@@ -1060,7 +1079,7 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
 
     cbar_label = "Posterior probability"
     if (plot_relative_probability):
-        cbar_label = "Relative probability $P/P_{\\mathrm{max}}$"
+        cbar_label = r"Relative probability $P/P_{\mathrm{max}}$"
     cbar.set_label(cbar_label, fontsize=plot_settings["colorbar_label_fontsize"], labelpad=plot_settings["colorbar_label_pad"], rotation=plot_settings["colorbar_label_rotation"])
 
     # Return plot

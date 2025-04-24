@@ -6,7 +6,6 @@ import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
 from gambit_plotting_tools.annotate import add_gambit_header
 
-
 # 
 # Read file
 # 

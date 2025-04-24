@@ -23,9 +23,15 @@ def add_header(header_text, ax=None, fontsize=plot_settings["header_fontsize"]):
 
 def add_gambit_header(ax=None, version=None, fontsize=plot_settings["header_fontsize"]):
     if version is not None:
-        header_text = f"\\textsf{{GAMBIT {version}}}"
+        if plt.rcParams.get("text.usetex"):        
+            header_text = f"\\textsf{{GAMBIT {version}}}"
+        else:
+            header_text = f"GAMBIT {version}"
     else:
-        header_text = "\\textsf{GAMBIT}"
+        if plt.rcParams.get("text.usetex"):        
+            header_text = "\\textsf{GAMBIT}"
+        else:
+            header_text = "GAMBIT"
     add_header(header_text, fontsize=fontsize)
 
 

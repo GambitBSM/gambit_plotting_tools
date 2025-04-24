@@ -46,8 +46,8 @@ dataset_bounds = {
 
 # Specify some pretty plot labels?
 plot_labels = {
-    "x1": "$x_{1}$ (unit)",
-    "x2": "$x_{2}$ (unit)",
+    "x1": r"$x_{1}$ (unit)",
+    "x2": r"$x_{2}$ (unit)",
 }
 
 # Number of bins used for profiling
@@ -84,7 +84,7 @@ fig, ax, cbar_ax = plot_utils.plot_2D_profile(
 )
 
 # Add header
-header_text = "$1\\sigma$ and $2\\sigma$ CL regions."
+header_text = r"$1\sigma$ and $2\sigma$ CL regions."
 add_header(header_text, ax=ax)
 
 # Save to file

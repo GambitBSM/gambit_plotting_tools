@@ -28,7 +28,7 @@ setup(
     python_requires='>=3.10',
     install_requires=[
         "numpy >= 1.23.0",
-        "matplotlib >= 3.5.2",
+        "matplotlib >= 3.8.0",
         "scipy >= 1.10.1",
         "h5py >= 3.9.0",
         "pillow",

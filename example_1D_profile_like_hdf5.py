@@ -41,7 +41,7 @@ dataset_bounds = {
 
 # Specify some pretty plot labels?
 plot_labels = {
-    "sigma": "$\\sigma$ (unit)",
+    "sigma": r"$\sigma$ (unit)",
 }
 
 # Number of bins used for profiling

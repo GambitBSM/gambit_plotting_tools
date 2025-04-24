@@ -66,8 +66,10 @@ dataset_bounds = {
 
 # Specify some pretty plot labels?
 plot_labels = {
-    "mu": "$\\mu$ (unit)",
-    "sigma": "$\\sigma$ (unit)",
+    "mu": r"$\mu$ (unit)",
+    "sigma": r"$\sigma$ (unit)",
+    "sigma2": r"$\sigma^2$ (unit)",
+    "log_mu": r"$\log{\mu}$ (unit)",
 }
 
 # Number of bins used for profiling
@@ -108,7 +110,11 @@ for z_key in z_keys:
             )
 
             # Add header
-            header_text = "$1\\sigma$ and $2\\sigma$ CL regions. \\textsf{GAMBIT} 2.5"
+            header_text = r"$1\sigma$ and $2\sigma$ CL regions." 
+            if plt.rcParams.get("text.usetex"):
+                header_text += r" \textsf{GAMBIT} 2.5"
+            else:
+                header_text += r" GAMBIT 2.5"
             add_header(header_text, ax=ax)
 
             # Save to file
