@@ -337,7 +337,7 @@ def create_empty_figure_1D(xy_bounds, plot_settings):
 
 
 
-def create_empty_figure_2D(xy_bounds, plot_settings):
+def create_empty_figure_2D(xy_bounds, plot_settings, use_facecolor=None):
 
     # Get bounds in x and y
     x_min, x_max = xy_bounds[0]
@@ -360,7 +360,10 @@ def create_empty_figure_2D(xy_bounds, plot_settings):
     left = pad_left
     bottom = pad_bottom
     ax = fig.add_axes((left, bottom, plot_width, plot_height), frame_on=True)
-    ax.set_facecolor(plot_settings["facecolor_plot"])
+    if use_facecolor is not None:
+        ax.set_facecolor(use_facecolor)
+    else:
+        ax.set_facecolor(plot_settings["facecolor_plot"])
 
     # Set frame color and width
     for spine in ax.spines.values():
@@ -484,8 +487,8 @@ def bin_and_profile_1D(x_data, y_data, n_bins, x_bounds,
 
 
 def bin_and_profile_2D(x_data, y_data, z_data, n_bins, xy_bounds, 
-                       already_sorted=False, 
-                       z_fill_value=-1*np.finfo(float).max):
+                       c_data=None, already_sorted=False, 
+                       z_fill_value=np.nan, c_fill_value=np.nan):
 
     # Number of points
     n_pts = x_data.shape[0]
@@ -498,6 +501,8 @@ def bin_and_profile_2D(x_data, y_data, z_data, n_bins, xy_bounds,
         x_data = x_data[p]
         y_data = y_data[p]
         z_data = z_data[p]
+        if c_data is not None:
+            c_data = c_data[p]
 
     # Get bounds in x and y
     x_min, x_max = xy_bounds[0]
@@ -519,6 +524,7 @@ def bin_and_profile_2D(x_data, y_data, z_data, n_bins, xy_bounds,
     x_bin_indices = np.digitize(x_data, x_bin_limits, right=False) - 1
     y_bin_indices = np.digitize(y_data, y_bin_limits, right=False) - 1
 
+
     # Determine the z value in each bin.
     # 
     # Since we have already sorted all the points from high to low
@@ -527,8 +533,14 @@ def bin_and_profile_2D(x_data, y_data, z_data, n_bins, xy_bounds,
     # subsequent points we find that belong in that bin we just skip past 
     # (using the z_val_is_set check below). 
 
-    z_values = np.zeros(n_xbins * n_ybins)
-    z_val_is_set = np.array(z_values, dtype=bool)  # Every entry initialised to False
+    z_values = np.full(n_xbins * n_ybins, z_fill_value)
+    # z_values = np.zeros(n_xbins * n_ybins)
+    if c_data is None:
+        c_values = np.full(n_xbins * n_ybins, z_fill_value)
+    else:
+        c_values = np.full(n_xbins * n_ybins, c_fill_value)
+    
+    z_val_is_set = np.zeros(n_xbins * n_ybins, dtype=bool)  # Every entry initialised to False
 
     for i in range(n_pts):
 
@@ -544,17 +556,21 @@ def bin_and_profile_2D(x_data, y_data, z_data, n_bins, xy_bounds,
 
         z_val = z_data[i]
         z_values[z_values_index] = z_val
+        if c_data is not None:
+            c_val = c_data[i]
+            c_values[z_values_index] = c_val
+        else:
+            c_values[z_values_index] = z_val
         z_val_is_set[z_values_index] = True
 
         if np.all(z_val_is_set):
             break
 
     # For the (x,y) bins where we don't have any points in plot_data, 
-    # we set the z value manually using z_fill_value
-    for z_values_index in range(z_values.shape[0]):
-            if not z_val_is_set[z_values_index]:
-                z_values[z_values_index] = z_fill_value
-
+    # z_values is already filled with z_fill_value.
+    # For c_values, if c_data was provided, those bins are already c_fill_value.
+    # If c_data was not provided, those bins should be z_fill_value (already done during initialization).
+    # So, no explicit loop is needed here if initialization is correct.
 
     # Fill arrays x_values and y_values
     x_values = np.zeros(n_xbins * n_ybins)
@@ -566,7 +582,7 @@ def bin_and_profile_2D(x_data, y_data, z_data, n_bins, xy_bounds,
             x_values[point_index] = x_bin_centre
             y_values[point_index] = y_bin_centre
 
-    return x_values, y_values, z_values
+    return x_values, y_values, z_values, c_values
 
 
 
@@ -747,17 +763,25 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
 def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray, 
                     labels: tuple, n_bins: tuple, xy_bounds = None, z_bounds = None,
                     contour_levels = [], contour_coordinates_output_file = None,
-                    z_fill_value = -1*np.finfo(float).max, 
                     z_is_loglike = True, plot_likelihood_ratio = True,
                     add_max_likelihood_marker = True,
+                    color_data: np.ndarray = None, color_label: str = None, 
+                    color_bounds = None, color_z_condition = None,
+                    missing_value_color= None,
                     plot_settings = gambit_plot_settings.plot_settings) -> None:
 
     # Sanity checks
     if not (x_data.shape == y_data.shape == z_data.shape):
-        raise Exception("All input arrays must have the same shape.")
+        raise Exception("Input arrays x_data, y_data, z_data must have the same shape.")
 
     if not (len(x_data.shape) == len(y_data.shape) == len(z_data.shape) == 1):
-        raise Exception("Input arrays must be one-dimensional.")
+        raise Exception("Input arrays x_data, y_data, z_data must be one-dimensional.")
+
+    if color_data is not None:
+        if not (color_data.shape == x_data.shape):
+            raise Exception("Input array color_data must have the same shape as x_data, y_data, z_data.")
+        if not (len(color_data.shape) == 1):
+            raise Exception("Input array color_data must be one-dimensional.")
 
     # Number of points
     n_pts = x_data.shape[0]
@@ -768,6 +792,10 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     x_data = x_data[p]
     y_data = y_data[p]
     z_data = z_data[p]
+    if color_data is None:
+        c_data = z_data
+    else:
+        c_data = color_data[p]
 
     # Get the highest and lowest z values
     z_max = z_data[0]
@@ -775,7 +803,7 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
 
     # Get plot bounds in x and y
     if xy_bounds is None:
-        xy_bounds = ([np.min(x_data), np.max(x_data)], [np.min(y_data), np.max(y_data)])
+        xy_bounds = ([np.min(x_data), np.max(x_data)], [np.min(y_data), np.max(y_data)]) # Use sorted data for bounds if not provided
     xy_bounds[0][0] -= np.finfo(float).eps
     xy_bounds[0][1] += np.finfo(float).eps
     xy_bounds[1][0] -= np.finfo(float).eps
@@ -788,27 +816,53 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
         z_data = z_data - z_max
         z_max = z_data[0]
         z_min = z_data[-1]
+        if color_data is None:
+            c_data = z_data
 
-    # Bin and profile data
-    x_values, y_values, z_values = bin_and_profile_2D(x_data, y_data, z_data, 
-                                                      n_bins, xy_bounds,
-                                                      already_sorted=True, 
-                                                      z_fill_value=z_fill_value)
+    # Fill values
+    z_fill_value = np.nan
+    c_fill_value = np.nan
+
+    # Bin and profile data.
+    # Pass sorted data (x_data, y_data, z_data, c_data) and already_sorted=True
+    x_values, y_values, z_values, c_values = bin_and_profile_2D(
+        x_data, y_data, z_data, n_bins, xy_bounds,
+        c_data=c_data, 
+        already_sorted=True, 
+        z_fill_value=z_fill_value, 
+        c_fill_value=c_fill_value
+    )
 
     # Convert from lnL - lnL_max = ln(L/Lmax) to L/Lmax 
     if z_is_loglike and plot_likelihood_ratio:
         z_values = np.exp(z_values)
+        if color_data is None:  # c_data = z_data
+            c_values = np.exp(c_values)
+
+    # Max and min values for the color dataset
+    c_max = np.nanmax(c_values)
+    c_min = np.nanmin(c_values)
 
     # Colorbar range
-    if z_bounds is None:
-        z_bounds = (z_min, z_max)
-        if (z_is_loglike) and (plot_likelihood_ratio):
-            z_bounds = (0.0, 1.0)
-        if (z_is_loglike) and (not plot_likelihood_ratio):
-            z_bounds = (z_max - 9.0, z_max)
-
-    # Create an empty figure using our plot settings
-    fig, ax = create_empty_figure_2D(xy_bounds, plot_settings)
+    if color_data is None:   # c_data = z_data
+        if z_bounds is None:
+            if z_is_loglike and plot_likelihood_ratio:
+                color_plot_bounds = (0.0, 1.0)
+            elif z_is_loglike and not plot_likelihood_ratio:
+                color_plot_bounds = (z_max - 9.0, z_max)
+            else:
+                color_plot_bounds = (z_min, z_max)
+        else:
+            color_plot_bounds = z_bounds
+    else:
+        if color_bounds is None:
+            color_plot_bounds = (c_min, c_max)
+        else:
+            color_plot_bounds = color_bounds
+            
+    if missing_value_color is None:
+        missing_value_color = plot_settings["facecolor_plot"]
+    fig, ax = create_empty_figure_2D(xy_bounds, plot_settings, use_facecolor=missing_value_color)
 
     # Axis labels
     x_label = labels[0]
@@ -820,56 +874,101 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     plt.xticks(fontsize=fontsize)
     plt.yticks(fontsize=fontsize)
 
-    # Create a color scale normalization
-    norm = matplotlib.cm.colors.Normalize(vmin=z_bounds[0], vmax=z_bounds[1])
+    # Create a color scale normalization using the determined bounds
+    norm = matplotlib.cm.colors.Normalize(vmin=color_plot_bounds[0], vmax=color_plot_bounds[1])
 
-    # Make color plot of the profile loglike
+    # Reshape data for plotting
     n_xbins = n_bins[0]
     n_ybins = n_bins[1]
     x_values = x_values.reshape(n_ybins, n_xbins)
     y_values = y_values.reshape(n_ybins, n_xbins)
     z_values = z_values.reshape(n_ybins, n_xbins)
-    im = ax.imshow(z_values, interpolation=plot_settings["interpolation"], aspect="auto", extent=[x_min, x_max, y_min, y_max],
+    c_values = c_values.reshape(n_ybins, n_xbins)
+
+    # Do interpolation?
+    x_values_plot = x_values
+    y_values_plot = y_values
+    z_values_plot = z_values
+    c_values_plot = c_values
+    if plot_settings["interpolation"]:
+        x_values_interpolated, y_values_interpolated, c_values_interpolated = grid_2D_interpolation(x_values, y_values, c_values, plot_settings["interpolation_resolution"])
+        _, _, z_values_interpolated = grid_2D_interpolation(x_values, y_values, z_values, plot_settings["interpolation_resolution"])
+
+        if z_is_loglike and plot_settings["close_likelihood_contours"]:
+            z_values_interpolated[np.isnan(z_values_interpolated)] = np.nanmin(z_values_interpolated)
+
+        x_values_plot = x_values_interpolated
+        y_values_plot = y_values_interpolated
+        z_values_plot = z_values_interpolated
+        c_values_plot = c_values_interpolated.T  # Transpose is due to how imshow works
+    else:
+        if z_is_loglike and plot_settings["close_likelihood_contours"]:
+            z_values_plot[np.isnan(z_values_plot)] = np.nanmin(z_values_plot)
+
+    # Mask some part of the colored data?
+    if (color_data is not None) and (color_z_condition is not None):
+        if plot_settings["interpolation"]:
+            mask = np.logical_not(color_z_condition(z_values_plot.T))
+        else:
+            mask = np.logical_not(color_z_condition(z_values_plot))
+        c_values_plot[mask] = np.nan
+
+    # Make color plot
+    im = ax.imshow(c_values_plot, aspect="auto", extent=[x_min, x_max, y_min, y_max],
                    cmap=plot_settings["colormap"], norm=norm, origin="lower")
 
     # Draw contours?
     if len(contour_levels) > 0:
         contour_levels.sort()
-        contour = ax.contour(x_values, y_values, z_values, contour_levels, colors=plot_settings["contour_color"], 
-                             linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), linestyles=plot_settings["contour_linestyle"])
+        contour = ax.contour(x_values_plot, y_values_plot, z_values_plot, contour_levels, 
+                             colors=plot_settings["contour_color"], 
+                             linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), 
+                             linestyles=plot_settings["contour_linestyle"])
 
         # Save contour coordinates to file?
         if contour_coordinates_output_file != None:
-
             header = "# x,y coordinates for profile likelihood contours at the likelihood ratio values " + ", ".join([f"{l:.4e}" for l in contour_levels]) + ". Sets of coordinates for individual closed contours are separated by nan entries."
             save_contour_coordinates(contour, contour_coordinates_output_file, header=header)
 
     # Add a star at the max-likelihood point
     if (z_is_loglike and add_max_likelihood_marker):
-        max_like_index = np.argmax(z_data)
-        x_max_like = x_data[max_like_index]
-        y_max_like = y_data[max_like_index]
-        ax.scatter(x_max_like, y_max_like, marker=plot_settings["max_likelihood_marker"], s=plot_settings["max_likelihood_marker_size"], c=plot_settings["max_likelihood_marker_color"],
-                   edgecolor=plot_settings["max_likelihood_marker_edgecolor"], linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100)
+        x_max_like = x_data[0] # x_data has already been sorted according to z_data
+        y_max_like = y_data[0] # y_data has already been sorted according to z_data
+        ax.scatter(x_max_like, y_max_like, marker=plot_settings["max_likelihood_marker"], 
+                   s=plot_settings["max_likelihood_marker_size"], 
+                   c=plot_settings["max_likelihood_marker_color"],
+                   edgecolor=plot_settings["max_likelihood_marker_edgecolor"], 
+                   linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100)
 
     # Add a colorbar
-    cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"], height=plot_settings["colorbar_height"], loc=plot_settings["colorbar_loc"], borderpad=plot_settings["colorbar_borderpad"])
+    cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"], height=plot_settings["colorbar_height"], 
+                         loc=plot_settings["colorbar_loc"], borderpad=plot_settings["colorbar_borderpad"])
     cbar = fig.colorbar(im, cax=cbar_ax, orientation=plot_settings["colorbar_orientation"])
 
     cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
     cbar.outline.set_linewidth(plot_settings["framewidth"])
 
-    cbar.set_ticks(np.linspace(z_bounds[0], z_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
-    cbar.set_ticks(np.linspace(z_bounds[0], z_bounds[1], plot_settings["colorbar_n_minor_ticks"]), minor=True)
+    cbar.set_ticks(np.linspace(color_plot_bounds[0], color_plot_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
+    minor_tick_values = np.linspace(color_plot_bounds[0], color_plot_bounds[1], plot_settings["colorbar_n_minor_ticks"])
+    cbar.set_ticks(minor_tick_values[(minor_tick_values >= color_plot_bounds[0]) & (minor_tick_values <= color_plot_bounds[1])], minor=True)
 
     cbar.ax.tick_params(which="major", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
     cbar.ax.tick_params(which="minor", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
 
-    cbar_label = labels[2]
-    if (z_is_loglike) and (not plot_likelihood_ratio):
-        cbar_label = r"$\ln L   - \ln L_{\mathrm{max}}$"
-    if (z_is_loglike) and (plot_likelihood_ratio):
-        cbar_label = r"Profile likelihood ratio $\Lambda = L/L_{\mathrm{max}}$"
+    # Determine colorbar label
+    cbar_label = ""
+    if color_data is None:
+        cbar_label = labels[2] # Default z-axis label
+        if (z_is_loglike) and (not plot_likelihood_ratio):
+            cbar_label = r"$\ln L   - \ln L_{\mathrm{max}}$"
+        if (z_is_loglike) and (plot_likelihood_ratio):
+            cbar_label = r"Profile likelihood ratio $\Lambda = L/L_{\mathrm{max}}$"
+    else:
+        if color_label is None:
+            cbar_label = "[Missing label]"
+        else:
+            cbar_label = color_label
+            
     cbar.set_label(cbar_label, fontsize=plot_settings["colorbar_label_fontsize"], labelpad=plot_settings["colorbar_label_pad"], rotation=plot_settings["colorbar_label_rotation"])
 
     # Return plot
@@ -1134,7 +1233,65 @@ def nearest_neighbor_averaging(hdf5_file_and_group_names, target_dataset, NN_ins
 
 
 
+def grid_2D_interpolation(x_values, y_values, target_values, interpolation_resolution):
 
+    from scipy.interpolate import RegularGridInterpolator
+
+    # Created an array with all nan entries replaced using averages of nearby non-nan entries.
+    # This "extended" array will be used to avoid surprising interpolation results for the elements 
+    # in the target_values array that have neighboring nan entries. 
+    target_values_extended = target_values.copy()
+    while np.isnan(target_values_extended).sum() > 0:
+        target_values_extended = fill_nan_with_neighbor_mean(target_values_extended)
+
+    # Create two interpolators: One using linear interpolation with the extended data, 
+    # and another using nearest-neighbor interpolation with the original data.
+    interpolator_extended = RegularGridInterpolator((x_values[0,:], y_values[:,0]), target_values_extended.T, method="linear", fill_value=np.nan)
+    interpolator = RegularGridInterpolator((x_values[0,:], y_values[:,0]), target_values.T, method="nearest", fill_value=np.nan)
+
+    # Evaluate the two interpolators on the new grid of interpolation points
+    xi = np.linspace(np.min(x_values[0,:]), np.max(x_values[0,:]), interpolation_resolution)
+    yi = np.linspace(np.min(y_values[:,0]), np.max(y_values[:,0]), interpolation_resolution)
+    Xi, Yi = np.meshgrid(xi, yi, indexing='ij')
+    xi_yi_points = np.stack([Xi.ravel(), Yi.ravel()], axis=-1)
+
+    target_values_interpolated = interpolator(xi_yi_points).reshape(Xi.shape)
+    target_values_interpolated_extended = interpolator_extended(xi_yi_points).reshape(Xi.shape)
+
+    # Finally, use target_values_interpolated to mask those parts of 
+    # target_values_interpolated_extended that where nan entries originally.
+    target_values_interpolated_extended[np.isnan(target_values_interpolated)] = np.nan
+
+    return Xi, Yi, target_values_interpolated_extended
+
+
+def fill_nan_with_neighbor_mean(arr):
+    orig = np.array(arr, dtype=float)
+    result = orig.copy()
+    nrows, ncols = orig.shape
+
+    # All 8 neighbor offsets
+    neighbor_offsets = [
+        (-1, -1), (-1,  0), (-1, +1),
+        ( 0, -1),           ( 0, +1),
+        (+1, -1), (+1,  0), (+1, +1),
+    ]
+
+    # Do one sweep over the array
+    for i in range(nrows):
+        for j in range(ncols):
+            if np.isnan(orig[i, j]):
+                neighbor_vals = []
+                for di, dj in neighbor_offsets:
+                    ni, nj = i + di, j + dj
+                    if 0 <= ni < nrows and 0 <= nj < ncols:
+                        val = orig[ni, nj]
+                        if not np.isnan(val):
+                            neighbor_vals.append(val)
+                if neighbor_vals:
+                    result[i, j] = np.mean(neighbor_vals)
+
+    return result
 
 
 

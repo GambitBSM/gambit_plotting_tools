@@ -5,7 +5,9 @@ from gambit_plotting_tools.gambit_colormaps import gambit_std_cmap
 plot_settings = {
 
     "colormap": gambit_std_cmap,
-    "interpolation": "bilinear",
+
+    "interpolation": True,
+    "interpolation_resolution": 400,
 
     "framewidth": 1.2,
     "framecolor_plot": "white",
@@ -19,8 +21,8 @@ plot_settings = {
     "figwidth": 4.92,  # inches
     "figheight": 4.00, # inches
 
-    "pad_left": 0.19,
-    "pad_right": 0.18,
+    "pad_left": 0.16,
+    "pad_right": 0.21,
     "pad_bottom": 0.16,
     "pad_top": 0.05,
 
@@ -62,6 +64,7 @@ plot_settings = {
     "contour_linewidth": 1.0,
     "contour_color": "white",
     "contour_linestyle": "solid",
+    "close_likelihood_contours": True,
 
     "max_likelihood_marker": "*",
     "max_likelihood_marker_size": 100,
