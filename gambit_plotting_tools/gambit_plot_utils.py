@@ -899,8 +899,6 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
         if z_is_loglike and plot_settings["close_likelihood_contours"]:
             z_values_plot[np.isnan(z_values_plot)] = np.nanmin(z_values_plot)
 
-    print(f"DEBUG: {z_values_plot[np.isnan(z_values_plot)]}")
-
     # Mask some part of the colored data?
     if (color_data is not None) and (color_z_condition is not None):
         if plot_settings["interpolation"]:
