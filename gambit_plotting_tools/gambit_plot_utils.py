@@ -242,19 +242,13 @@ def save_contour_coordinates(contour, contour_coordinates_output_file, header=""
 
     coordinates = []
 
-    # Iterate over each contour line
+    # For every contour level
     for path in contour.get_paths():
-        vertices = path.vertices
-        coordinates.append(vertices)
-        # Use NaN separator to mark contour breaks
-        coordinates.append(np.array([[np.nan, np.nan]]))
-
-    # for collection in contour.collections:
-    #     for path in collection.get_paths():
-    #         vertices = path.vertices
-    #         coordinates.append(vertices)
-    #         # Use NaN separator to mark contour breaks
-    #         coordinates.append(np.array([[np.nan, np.nan]]))
+        # For every closed contour at this level
+        for poly in path.to_polygons():
+            coordinates.append(poly)
+            # Use NaN separator to mark contour breaks
+            coordinates.append(np.array([[np.nan, np.nan]]))
 
     # Concatenate all coordinate arrays into one
     coordinates = np.vstack(coordinates)
@@ -904,6 +898,8 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     else:
         if z_is_loglike and plot_settings["close_likelihood_contours"]:
             z_values_plot[np.isnan(z_values_plot)] = np.nanmin(z_values_plot)
+
+    print(f"DEBUG: {z_values_plot[np.isnan(z_values_plot)]}")
 
     # Mask some part of the colored data?
     if (color_data is not None) and (color_z_condition is not None):
