@@ -1,7 +1,6 @@
 # GAMBIT plotting tools
 
-A collection of plotting tools developed for use with **GAMBIT** and **GAMBIT-light** (see [gambitbsm.org](https://gambitbsm.org)).
-
+A collection of Python tools for making publication-quality profile likelihood and posterior plots. The tools are developed in the context of **GAMBIT** and **GAMBIT-light** (see [gambitbsm.org](https://gambitbsm.org)), but can be used as standalone tools. 
 
 ## Installation
 
