@@ -1068,6 +1068,13 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
                       contour_coordinates_output_file = None,
                       plot_relative_probability = True, 
                       add_mean_posterior_marker = True,
+                      color_data: np.ndarray = None,
+                      color_point_estimate: str = "mean",
+                      color_posterior_bins: int = 20,
+                      color_label: str = None,
+                      color_bounds = None,
+                      color_within_credible_region = None,
+                      missing_value_color = None,
                       plot_settings = gambit_plot_settings.plot_settings) -> None:
 
     # Sanity checks
@@ -1076,6 +1083,15 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
 
     if not (len(x_data.shape) == len(y_data.shape) == len(posterior_weights.shape) == 1):
         raise Exception("Input arrays must be one-dimensional.")
+
+    if color_data is not None:
+        if not (color_data.shape == x_data.shape):
+            raise Exception("Input array color_data must have the same shape as x_data, y_data, posterior_weights.")
+        if not (len(color_data.shape) == 1):
+            raise Exception("Input array color_data must be one-dimensional.")
+
+    if color_point_estimate not in ["mean", "maxpost"]:
+        raise Exception("The argument 'color_point_estimate' must be either 'mean' or 'maxpost'.")
 
     # Number of points
     n_pts = x_data.shape[0]
@@ -1095,14 +1111,92 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
     x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
     y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
 
+    # Initialize z_data for imshow
+    z_data_for_imshow = histogram.T
+    if plot_relative_probability and color_data is None:
+        z_data_for_imshow = z_data_for_imshow / np.max(z_data_for_imshow)
+
     # Colorbar range
     cmap_vmin = 0.0
-    cmap_vmax = np.max(histogram)
-    if (plot_relative_probability):
-        cmap_vmax = 1.0
+    cmap_vmax = None
+    if color_data is None:
+        cmap_vmax = np.max(histogram)
+        if plot_relative_probability:
+            cmap_vmax = 1.0
+
+    # Logic for calculating color_values_for_bins, if color_data is not None
+    if color_data is not None:
+        color_values_for_bins = np.full_like(histogram, np.nan, dtype=float)
+        num_color_bins_1d = color_posterior_bins
+        color_bins_1d = np.linspace(color_bounds[0], color_bounds[1], num_color_bins_1d + 1)
+
+        for i in range(len(x_edges) - 1):
+            for j in range(len(y_edges) - 1):
+                x_bin_min, x_bin_max = x_edges[i], x_edges[i+1]
+                y_bin_min, y_bin_max = y_edges[j], y_edges[j+1]
+
+                # Create a boolean mask for samples within the current 2D bin
+                mask = (x_data >= x_bin_min) & (x_data < x_bin_max) & \
+                       (y_data >= y_bin_min) & (y_data < y_bin_max)
+
+                # No samples in this bin? Continue to next bin
+                if not np.any(mask):
+                    continue
+
+                color_data_subset = color_data[mask]
+                weights_for_color_data_subset = posterior_weights[mask]
+                weights_sum = np.sum(weights_for_color_data_subset)
+
+                # All zero weights? Continue to next bin
+                if weights_sum == 0:
+                    continue
+
+                weights_for_color_data_subset = weights_for_color_data_subset / weights_sum
+
+                if color_point_estimate == "mean":
+                    color_values_for_bins[i, j] = np.sum(weights_for_color_data_subset * color_data_subset)
+
+                elif color_point_estimate == "maxpost":
+                    color_hist, color_bin_edges = np.histogram(
+                        color_data_subset,
+                        bins=color_bins_1d,
+                        weights=weights_for_color_data_subset,
+                        density=False
+                    )
+                    peak_color_bin_index = np.argmax(color_hist)
+                    peak_color_value = (color_bin_edges[peak_color_bin_index] + color_bin_edges[peak_color_bin_index+1]) / 2.0
+                    color_values_for_bins[i, j] = peak_color_value
+
+
+        # Mask some of the colored data?
+        if color_within_credible_region is not None:
+            # Find the contour level corresponding to the given credible region
+            sorted_hist = np.sort(histogram.ravel())[::-1]
+            cumulative_sum = np.cumsum(sorted_hist)
+            normalized_cumulative_sum = cumulative_sum / cumulative_sum[-1]
+            contour_level = sorted_hist[np.searchsorted(normalized_cumulative_sum, color_within_credible_region)]
+            # For posterior bins outside the given CR contour, set color value to nan
+            mask = histogram < contour_level
+            color_values_for_bins[mask] = np.nan 
+
+        # Set the z data for imshow
+        z_data_for_imshow = color_values_for_bins.T
+
+        # Update cmap_vmin and cmap_vmax for color_data
+        if color_bounds is not None:
+            cmap_vmin = color_bounds[0]
+            cmap_vmax = color_bounds[1]
+        else:
+            cmap_vmin = np.nanmin(color_values_for_bins)
+            cmap_vmax = np.nanmax(color_values_for_bins)
 
     # Create an empty figure using our plot settings
-    fig, ax = create_empty_figure_2D(xy_bounds, plot_settings)
+    if missing_value_color is None:
+        if color_data is None:
+            missing_value_color = plot_settings["colormap"](0.0)
+        else:
+            missing_value_color = plot_settings["facecolor_plot"]
+    fig, ax = create_empty_figure_2D(xy_bounds, plot_settings, use_facecolor=missing_value_color)
 
     # Axis labels
     x_label = labels[0]
@@ -1119,11 +1213,8 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
 
     # Make a color plot of the 2D posterior distribution
     X, Y = np.meshgrid(x_centers, y_centers)
-    z_data = histogram.T
-    if plot_relative_probability:
-        z_data = z_data / np.max(z_data)
-
-    im = ax.imshow(z_data, interpolation=plot_settings["interpolation"], aspect="auto", extent=[x_min, x_max, y_min, y_max],
+    # z_data for imshow is z_data_for_imshow, computed above
+    im = ax.imshow(z_data_for_imshow, aspect="auto", extent=[x_min, x_max, y_min, y_max],
                    cmap=plot_settings["colormap"], norm=norm, origin="lower")
 
     # Draw credible region contours?
@@ -1131,7 +1222,7 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
     if len(credible_regions) > 0:
 
         # For each requested CR contour, find the posterior 
-        # density height at which to draw the contour. 
+        # density height at which to draw the contour using the original histogram.
         sorted_hist = np.sort(histogram.ravel())[::-1]
         cumulative_sum = np.cumsum(sorted_hist)
         normalized_cumulative_sum = cumulative_sum / cumulative_sum[-1]
@@ -1140,17 +1231,16 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
 
         contour_levels.sort()
 
-        # Draw the contours
-        contour = ax.contour(X, Y, histogram.T, contour_levels, colors=plot_settings["contour_color"], 
-                             linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), linestyles=plot_settings["contour_linestyle"])
+        if contour_levels: # Only draw contours if levels were actually computed
+            contour = ax.contour(X, Y, histogram.T, contour_levels, colors=plot_settings["contour_color"],
+                                 linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), linestyles=plot_settings["contour_linestyle"])
 
-        # Save contour coordinates to file?
-        if contour_coordinates_output_file != None:
+            # Save contour coordinates to file?
+            if contour_coordinates_output_file != None:
+                header = "# x,y coordinates for contours corresponding to the "  + ", ".join([f"{cr:.4e}" for cr in credible_regions]) + " credible regions. Sets of coordinates for individual closed contours are separated by nan entries."
+                save_contour_coordinates(contour, contour_coordinates_output_file, header=header)
 
-            header = "# x,y coordinates for contours corresponding to the "  + ", ".join([f"{cr:.4e}" for cr in credible_regions]) + " credible regions. Sets of coordinates for individual closed contours are separated by nan entries."
-            save_contour_coordinates(contour, contour_coordinates_output_file, header=header)
-
-    # Add marker at the mean posterior point
+    # Add marker at the mean posterior point?
     if add_mean_posterior_marker:
         x_mean = np.average(x_data, weights=posterior_weights)
         y_mean = np.average(y_data, weights=posterior_weights)
@@ -1165,15 +1255,32 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
     cbar.outline.set_linewidth(plot_settings["framewidth"])
 
     cbar.set_ticks(np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_major_ticks"]), minor=False)
-    cbar.set_ticks(np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_minor_ticks"]), minor=True)
+    # Ensure minor ticks are within the bounds
+    minor_tick_values = np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_minor_ticks"])
+    cbar.set_ticks(minor_tick_values[(minor_tick_values >= cmap_vmin) & (minor_tick_values <= cmap_vmax)], minor=True)
 
     cbar.ax.tick_params(which="major", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
     cbar.ax.tick_params(which="minor", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
 
-    cbar_label = "Posterior probability"
-    if (plot_relative_probability):
-        cbar_label = r"Relative probability $P/P_{\mathrm{max}}$"
-    cbar.set_label(cbar_label, fontsize=plot_settings["colorbar_label_fontsize"], labelpad=plot_settings["colorbar_label_pad"], rotation=plot_settings["colorbar_label_rotation"])
+    # Colorbar label for color_data
+    cbar_label_str = ""
+    if color_data is not None:
+        if color_label is not None:
+            cbar_label_str = color_label
+        else:
+            cbar_label_str = "[Missing label]"
+
+        if color_point_estimate == "mean":
+            cbar_label_str = f"{cbar_label_str}, posterior mean"
+        elif color_point_estimate == "maxpost":
+            cbar_label_str = f"{cbar_label_str}, posterior max"
+
+    else:
+        cbar_label_str = "Posterior probability"
+        if plot_relative_probability:
+            cbar_label_str = r"Relative probability $P/P_{\mathrm{max}}$"
+
+    cbar.set_label(cbar_label_str, fontsize=plot_settings["colorbar_label_fontsize"], labelpad=plot_settings["colorbar_label_pad"], rotation=plot_settings["colorbar_label_rotation"])
 
     # Return plot
     return fig, ax, cbar_ax
