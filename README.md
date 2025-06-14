@@ -83,6 +83,8 @@ By default this package will attempt to use Matplotlib's functionality for [rend
   
   <img src="example_plots/2D_posterior__mu__sigma.png" alt="2D posterior example plot" width="500"/>
 
+  There is also an option to color a 2D posterior plot according to the posterior max or mean of a third dataset. See the example in `example_2D_posterior_color_data_hdf5.py`.
+
 
 ## Utility scripts
 
