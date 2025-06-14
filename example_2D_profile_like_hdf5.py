@@ -1,6 +1,7 @@
 from copy import deepcopy
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
@@ -57,8 +58,12 @@ xy_bins = (100, 100)
 
 # Load default plot settings (and make adjustments if necessary)
 plot_settings = deepcopy(gambit_plot_settings.plot_settings)
-plot_settings["interpolation"] = False
+plot_settings["interpolation"] = True
 plot_settings["interpolation_resolution"] = 400
+
+# Discretize colormap?
+# n_colors = 20
+# plot_settings["colormap"] = ListedColormap(plot_settings["colormap"](np.linspace(0, 1, n_colors)))
 
 # If variable bounds are not specified in dataset_bounds, use the full range from the data
 x_bounds = dataset_bounds.get(x_key, [np.min(data[x_key]), np.max(data[x_key])])

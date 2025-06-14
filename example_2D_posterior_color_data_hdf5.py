@@ -2,6 +2,7 @@ from copy import deepcopy
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 import gambit_plotting_tools.gambit_plot_utils as plot_utils
 import gambit_plotting_tools.gambit_plot_settings as gambit_plot_settings
@@ -62,6 +63,10 @@ xy_bins = (50, 50)
 plot_settings = deepcopy(gambit_plot_settings.plot_settings)
 plot_settings["colormap"] = matplotlib.colormaps["inferno"]
 
+# Discretize colormap?
+n_colors = 20
+plot_settings["colormap"] = ListedColormap(plot_settings["colormap"](np.linspace(0, 1, n_colors)))
+
 # If variable bounds are not specified in dataset_bounds, use the full range from the data
 x_bounds = dataset_bounds.get(x_key, [np.min(data[x_key]), np.max(data[x_key])])
 y_bounds = dataset_bounds.get(y_key, [np.min(data[y_key]), np.max(data[y_key])])
@@ -86,7 +91,7 @@ fig, ax, cbar_ax = plot_utils.plot_2D_posterior(
     add_mean_posterior_marker=True,
     color_data=data[c_key],
     color_point_estimate="maxpost", # "mean" or "maxpost"
-    color_posterior_bins=20,
+    color_posterior_bins=n_colors,
     color_label=plot_labels.get(c_key, c_key),
     color_bounds=dataset_bounds["color_data"],
     # color_within_credible_region=credible_regions[-1],
