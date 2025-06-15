@@ -27,7 +27,7 @@ data = plot_utils.read_hdf5_datasets([(hdf5_file, group_name)], datasets, filter
 
 
 # 
-# Make a 2D profile likelihood plot
+# Make a plot of conditional confidence intervals
 # 
 
 # Get contour levels

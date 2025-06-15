@@ -110,6 +110,20 @@ By default this package will attempt to use Matplotlib's functionality for [rend
   <img src="example_plots/2D_posterior__mu__sigma__color_data.png" alt="2D posterior plot colored according to the posterior max/mean of a third dataset" width="500"/>
 
 
+### Conditional credible intervals
+
+- Make a series of credible intervals for the y variable, conditioned on the x variable being within a given range, or above/below a certain value
+  ```terminal
+  python example_conditional_credible_intervals_shaded_hdf5.py
+  python example_conditional_credible_intervals_colored_hdf5.py
+  ```
+  In these examples the condition on x is an upper bound, which gives results like this:
+
+  <img src="example_plots/conditional_credible_intervals__mu__sigma__shaded.png" alt="conditional confidence interval plot, shaded" width="350"/>
+  <img src="example_plots/conditional_credible_intervals__mu__sigma__colored.png" alt="conditional confidence interval plot, colored" width="350"/>
+
+  The markers show the conditional posterior mean.
+
 
 ## Utility scripts
 

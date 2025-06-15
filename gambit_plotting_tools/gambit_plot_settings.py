@@ -31,7 +31,7 @@ plot_settings = {
 
     "fontsize": 14,
 
-    "1D_posterior_color": "blue",
+    "1D_posterior_color": "purple",
     "1D_posterior_fill_alpha": 0.2,
 
     "1D_profile_likelihood_color": "crimson",
@@ -87,6 +87,12 @@ plot_settings = {
     "posterior_mean_marker_color": "white",
     "posterior_mean_marker_edgecolor": "black",
     "posterior_mean_marker_linewidth": 1.2,
+
+    "posterior_max_marker": "D",
+    "posterior_max_marker_size": 40,
+    "posterior_max_marker_color": "white",
+    "posterior_max_marker_edgecolor": "black",
+    "posterior_max_marker_linewidth": 1.2,
 
     "colorbar_width": "6.25%",
     "colorbar_height": "92.5%",

@@ -1001,6 +1001,7 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
 def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray, 
                                        labels: tuple, n_bins: tuple, xy_bounds=None, 
                                        z_bounds=None, confidence_levels=[],
+                                       draw_interval_limits=True,
                                        draw_interval_connectors=True,
                                        add_max_likelihood_marker=True,
                                        shaded_confidence_interval_bands=False,
@@ -1083,6 +1084,9 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
 
         # If no data, continue to next x bin
         if len(y_subset) == 0:
+            if add_max_likelihood_marker:
+                 max_likelihood_coordinates.append(np.nan)
+            ci_boundaries.append([])
             continue
 
         _, _, plot_details = plot_1D_profile(
@@ -1110,8 +1114,10 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
 
         # Get marker position
         if add_max_likelihood_marker:
-            max_likelihood_coordinates.append(plot_details["max_like_coordinate"])
-
+            if "max_like_coordinate" in plot_details:
+                max_likelihood_coordinates.append(plot_details["max_like_coordinate"])
+            else:
+                max_likelihood_coordinates.append(np.nan)
 
     # Create an empty figure using our plot settings
     if shaded_confidence_interval_bands:
@@ -1121,11 +1127,13 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
             missing_value_color = plot_settings["facecolor_plot"]
         fig, ax = create_empty_figure_2D(xy_bounds, plot_settings, use_facecolor=missing_value_color)
 
-    # Create color normalization
-    norm = matplotlib.cm.colors.Normalize(vmin=z_bounds[0], vmax=z_bounds[1])
 
-    # Make 2D color plot
+    # Plot 2D color plot?
     if not shaded_confidence_interval_bands:
+
+        # Create color normalization
+        norm = matplotlib.cm.colors.Normalize(vmin=z_bounds[0], vmax=z_bounds[1])
+
         im = ax.imshow(
             Z_values_2D,
             extent=(x_min, x_max, y_min, y_max),
@@ -1136,6 +1144,7 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
             norm=norm,
         )
 
+    # Loop over x bins to draw intervals, markers, etc.
     for i in range(n_bins[0]):
         current_x_min = x_bin_limits[i]
         current_x_max = x_bin_limits[i+1]
@@ -1143,14 +1152,13 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
 
         x_bin_ci_bounds = ci_boundaries[i]
 
-        for ci_idx,d in enumerate(x_bin_ci_bounds):
-            ci_starts = d["fill_starts_x"]
-            ci_ends = d["fill_ends_x"]
+        for ci_idx, ci_dict in enumerate(x_bin_ci_bounds):
+            ci_starts = ci_dict["fill_starts_x"]
+            ci_ends = ci_dict["fill_ends_x"]
 
             assert(len(ci_starts) == len(ci_ends))
             for start,end in zip(ci_starts, ci_ends):
 
-                # _Anders
                 if shaded_confidence_interval_bands:
                     plt.fill_between(
                         x=[current_x_min, current_x_max],
@@ -1162,20 +1170,21 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
                         zorder=0,
                     )
 
-                plt.plot(
-                    [current_x_min, current_x_max], [start, start], 
-                    color=plot_settings["contour_color"], 
-                    linewidth=plot_settings["contour_linewidth"],
-                    linestyle=plot_settings["contour_linestyle"],
-                    zorder=0,
-                )
-                plt.plot(
-                    [current_x_min, current_x_max], [end, end], 
-                    color=plot_settings["contour_color"], 
-                    linewidth=plot_settings["contour_linewidth"],
-                    linestyle=plot_settings["contour_linestyle"],
-                    zorder=0,
-                )
+                if draw_interval_limits:
+                    plt.plot(
+                        [current_x_min, current_x_max], [start, start], 
+                        color=plot_settings["contour_color"], 
+                        linewidth=plot_settings["contour_linewidth"],
+                        linestyle=plot_settings["contour_linestyle"],
+                        zorder=0,
+                    )
+                    plt.plot(
+                        [current_x_min, current_x_max], [end, end], 
+                        color=plot_settings["contour_color"], 
+                        linewidth=plot_settings["contour_linewidth"],
+                        linestyle=plot_settings["contour_linestyle"],
+                        zorder=0,
+                    )
                 if draw_interval_connectors:
                     plt.plot(
                         [current_x_bin_centre, current_x_bin_centre], [start, end], 
@@ -1185,7 +1194,7 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
                         zorder=0,
                     )
 
-        if add_max_likelihood_marker:
+        if add_max_likelihood_marker and not np.isnan(max_likelihood_coordinates[i]):
             max_like_y_coord = max_likelihood_coordinates[i]
             ax.scatter(current_x_bin_centre, max_like_y_coord, marker=plot_settings["max_likelihood_marker"], s=plot_settings["max_likelihood_marker_size"], c=plot_settings["max_likelihood_marker_color"],
                        edgecolor=plot_settings["max_likelihood_marker_edgecolor"], linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100, clip_on=False)
@@ -1230,12 +1239,12 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
         cbar.ax.tick_params(which="major", labelsize=fontsize - 3, direction="in",
                             color=plot_settings["colorbar_major_ticks_color"],
                             width=plot_settings["colorbar_major_ticks_width"],
-                            length=plot_settings["colorbar_major_ticks_length"], # Typo: should be colorbar_major_ticks_length
+                            length=plot_settings["colorbar_major_ticks_length"],
                             pad=plot_settings["colorbar_major_ticks_pad"])
         cbar.ax.tick_params(which="minor", labelsize=fontsize - 3, direction="in",
                             color=plot_settings["colorbar_minor_ticks_color"],
                             width=plot_settings["colorbar_minor_ticks_width"],
-                            length=plot_settings["colorbar_minor_ticks_length"], # Typo: should be colorbar_minor_ticks_length
+                            length=plot_settings["colorbar_minor_ticks_length"],
                             pad=plot_settings["colorbar_minor_ticks_pad"])
 
         if len(labels) > 2:
@@ -1257,13 +1266,295 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
 
 
 
+def plot_conditional_credible_intervals(
+    x_data: np.ndarray, y_data: np.ndarray, posterior_weights: np.ndarray,
+    labels: tuple, n_bins: tuple, xy_bounds=None,
+    credible_regions=[],
+    draw_interval_connectors=True,
+    draw_interval_limits=True,
+    add_mean_posterior_marker=True,
+    add_max_posterior_marker=True,
+    shaded_credible_region_bands=False,
+    x_condition="bin",
+    missing_value_color=None,
+    plot_settings=gambit_plot_settings.plot_settings):
+
+    cbar_ax_to_return = None
+
+    known_x_conditions = ["bin", "upperbound", "lowerbound"]
+    if x_condition not in known_x_conditions:
+        raise Exception(f"Argument 'x_condition' must be one of {', '.join(known_x_conditions)}.")
+
+    # Determine bounds
+    if xy_bounds is None:
+        # Determine bounds from data if not provided
+        x_min_data, x_max_data = np.min(x_data), np.max(x_data)
+        y_min_data, y_max_data = np.min(y_data), np.max(y_data)
+        xy_bounds = ([x_min_data, x_max_data], [y_min_data, y_max_data])
+
+    xy_bounds[0][0] -= np.finfo(float).eps
+    xy_bounds[0][1] += np.finfo(float).eps
+    xy_bounds[1][0] -= np.finfo(float).eps
+    xy_bounds[1][1] += np.finfo(float).eps
+    x_min, x_max = xy_bounds[0]
+    y_min, y_max = xy_bounds[1]
+
+    # Define x-bins
+    x_bin_limits = np.linspace(x_min, x_max, n_bins[0] + 1)
+
+    # Initialize Z_values_2D for posterior probabilities
+    if plot_settings["interpolation"]:
+        Z_values_2D = np.full((plot_settings["interpolation_resolution"], n_bins[0]), np.nan)
+        # y_coarse is implicitly defined by plot_details["main_graph_x_data"] later
+        y_fine = np.linspace(y_min, y_max, plot_settings["interpolation_resolution"])
+    else:
+        Z_values_2D = np.full((n_bins[1], n_bins[0]), np.nan)
+
+
+    cr_boundaries = []
+    mean_posterior_coordinates = []
+    max_posterior_coordinates = []
+
+    for i in range(n_bins[0]):
+        # Select data for current x-bin
+        current_x_min = x_bin_limits[i]
+        current_x_max = x_bin_limits[i+1]
+
+        if x_condition == "bin":
+            if i == n_bins[0] - 1: # Handle the right edge of the last bin
+                mask = (x_data >= current_x_min) & (x_data <= current_x_max)
+            else:
+                mask = (x_data >= current_x_min) & (x_data < current_x_max)
+        elif x_condition == "upperbound":
+            mask = (x_data <= current_x_max)
+        elif x_condition == "lowerbound":
+            mask = (x_data >= current_x_min)
+
+        y_subset = deepcopy(y_data[mask])
+        posterior_weights_subset = deepcopy(posterior_weights[mask])
+
+        # If no data, continue to next x bin
+        if len(y_subset) == 0 or np.sum(posterior_weights_subset) == 0:
+            if add_mean_posterior_marker:
+                 mean_posterior_coordinates.append(np.nan)
+            cr_boundaries.append([])
+            continue
+
+        # Call plot_1D_posterior to get details for the current slice
+        _, _, plot_details = plot_1D_posterior(
+            x_data=y_subset,
+            posterior_weights=posterior_weights_subset,
+            x_label=labels[1], # y-axis of the conditional plot is x-axis of the 1D posterior
+            n_bins=n_bins[1],
+            x_bounds=xy_bounds[1], # y-bounds of conditional plot are x-bounds for 1D posterior
+            credible_regions=credible_regions,
+            plot_relative_probability=True,
+            add_mean_posterior_marker=add_mean_posterior_marker,
+            add_max_posterior_marker=add_max_posterior_marker,
+            fill_color_below_graph=False,
+            shaded_credible_region_bands=True,
+            plot_settings=plot_settings,
+            return_plot_details=True
+        )
+        plt.close()  # plot_1D_posterior creates new figures, so we should close them
+
+        # Get the Z data. The x coordinates from the 1D plot are the 
+        # bin centers for the y-axis of our plot.
+        use_z = plot_details["main_graph_y_data"]
+        if plot_settings["interpolation"]:
+            # use_z contains the posterior value at the *bin centres* of the 1D posterior, 
+            # while "main_graph_x_data" has the bin edges. So we must compute the bin centres.
+            y_coarse = 0.5 * (plot_details["main_graph_x_data"][:-1] + plot_details["main_graph_x_data"][1:])
+            # Now interpolate
+            use_z = np.interp(y_fine, y_coarse, use_z, left=0, right=0)
+        Z_values_2D[:, i] = use_z
+
+        # Get credible interval boundaries
+        cr_boundaries.append(plot_details["cl_fill_between_coordinates"])
+
+        # Get marker position
+        if add_mean_posterior_marker:
+            if "mean_posterior_coordinate" in plot_details:
+                mean_posterior_coordinates.append(plot_details["mean_posterior_coordinate"])
+            else:
+                mean_posterior_coordinates.append(np.nan)
+        if add_max_posterior_marker:
+            if "max_posterior_coordinate" in plot_details:
+                max_posterior_coordinates.append(plot_details["max_posterior_coordinate"])
+            else:
+                max_posterior_coordinates.append(np.nan)
+
+    # Create an empty figure using our plot settings
+    if shaded_credible_region_bands:
+        fig, ax = create_empty_figure_1D(xy_bounds, plot_settings)
+    else:
+        if missing_value_color is None:
+            missing_value_color = plot_settings["facecolor_plot"]
+        fig, ax = create_empty_figure_2D(xy_bounds, plot_settings, use_facecolor=missing_value_color)
+
+
+    # Plot 2D color plot?
+    if not shaded_credible_region_bands:
+
+        # Create color normalization for posterior
+        posterior_prob_bounds = (0.0, 1.0) # Relative probability
+        norm = matplotlib.cm.colors.Normalize(vmin=posterior_prob_bounds[0], vmax=posterior_prob_bounds[1])
+
+        im = ax.imshow(
+            Z_values_2D,
+            extent=(x_min, x_max, y_min, y_max),
+            origin="lower",
+            aspect="auto",
+            cmap=plot_settings["colormap"],
+            interpolation="none", # or "nearest" if preferred for binned data
+            norm=norm,
+        )
+
+    # Loop over x bins to draw intervals, markers, etc.
+    for i in range(n_bins[0]):
+        current_x_min = x_bin_limits[i]
+        current_x_max = x_bin_limits[i+1]
+        current_x_bin_centre = 0.5 * (current_x_min + current_x_max)
+
+        if i >= len(cr_boundaries): # Skip if no data for this bin
+            continue
+        x_bin_cr_bounds = cr_boundaries[i]
+
+        for cr_idx, cr_dict in enumerate(x_bin_cr_bounds):
+            starts_y_coords = cr_dict["fill_starts_x"]
+            ends_y_coords = cr_dict["fill_ends_x"]
+
+            assert(len(starts_y_coords) == len(ends_y_coords))
+            for k in range(len(starts_y_coords)):
+                start_y = starts_y_coords[k]
+                end_y = ends_y_coords[k]
+
+                if shaded_credible_region_bands:
+                    plt.fill_between(
+                        x=[current_x_min, current_x_max],
+                        y1=[start_y, start_y],
+                        y2=[end_y, end_y],
+                        color=plot_settings["1D_posterior_color"],
+                        alpha=plot_settings["1D_posterior_fill_alpha"],
+                        linewidth=0.0,
+                        zorder=0,
+                    )
+
+                if draw_interval_limits:
+                    plt.plot(
+                        [current_x_min, current_x_max], [start_y, start_y],
+                        color=plot_settings["contour_color"],
+                        linewidth=plot_settings["contour_linewidth"],
+                        linestyle=plot_settings["contour_linestyle"],
+                        zorder=0,
+                    )
+                    plt.plot(
+                        [current_x_min, current_x_max], [end_y, end_y],
+                        color=plot_settings["contour_color"],
+                        linewidth=plot_settings["contour_linewidth"],
+                        linestyle=plot_settings["contour_linestyle"],
+                        zorder=0,
+                )
+                if draw_interval_connectors:
+                    plt.plot(
+                        [current_x_bin_centre, current_x_bin_centre], [start_y, end_y],
+                        color=plot_settings["connector_color"],
+                        linewidth=plot_settings["connector_linewidth"],
+                        linestyle=plot_settings["connector_linestyle"],
+                        zorder=0,
+                    )
+
+        if add_mean_posterior_marker and not np.isnan(mean_posterior_coordinates[i]):
+            mean_post_y_coord = mean_posterior_coordinates[i]
+            ax.scatter(current_x_bin_centre, mean_post_y_coord,
+                       marker=plot_settings["posterior_mean_marker"],
+                       s=plot_settings["posterior_mean_marker_size"],
+                       c=plot_settings["posterior_mean_marker_color"],
+                       edgecolor=plot_settings["posterior_mean_marker_edgecolor"],
+                       linewidth=plot_settings["posterior_mean_marker_linewidth"],
+                       zorder=100, clip_on=False)
+
+        if add_max_posterior_marker and not np.isnan(max_posterior_coordinates[i]):
+            max_post_y_coord = max_posterior_coordinates[i]
+            ax.scatter(current_x_bin_centre, max_post_y_coord,
+                       marker=plot_settings["posterior_max_marker"],
+                       s=plot_settings["posterior_max_marker_size"],
+                       c=plot_settings["posterior_max_marker_color"],
+                       edgecolor=plot_settings["posterior_max_marker_edgecolor"],
+                       linewidth=plot_settings["posterior_max_marker_linewidth"],
+                       zorder=100, clip_on=False)
+
+        # Add vertical separators
+        if i > 0:
+            plt.plot(
+                [current_x_min, current_x_min], [y_min, y_max],
+                color=plot_settings["separator_color"],
+                linewidth=plot_settings["separator_linewidth"],
+                linestyle="solid",
+                zorder=1,
+            )
+
+    # Set axis labels
+    x_label = labels[0]
+    if x_condition == "upperbound":
+        x_label = f"{x_label}, upper bound"
+    elif x_condition == "lowerbound":
+        x_label = f"{x_label}, lower bound"
+    y_label = labels[1]
+    fontsize = plot_settings["fontsize"]
+    plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
+    plt.ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
+
+    # Add colorbar
+    if not shaded_credible_region_bands:
+        cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"], height=plot_settings["colorbar_height"],
+                             loc=plot_settings["colorbar_loc"], borderpad=plot_settings["colorbar_borderpad"])
+        cbar = fig.colorbar(im, cax=cbar_ax, orientation=plot_settings["colorbar_orientation"])
+        cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
+        cbar.outline.set_linewidth(plot_settings["framewidth"])
+
+        # Use posterior_prob_bounds for ticks
+        cbar.set_ticks(np.linspace(posterior_prob_bounds[0], posterior_prob_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
+        minor_tick_values = np.linspace(posterior_prob_bounds[0], posterior_prob_bounds[1], plot_settings["colorbar_n_minor_ticks"])
+        cbar.set_ticks(minor_tick_values[(minor_tick_values >= posterior_prob_bounds[0]) & (minor_tick_values <= posterior_prob_bounds[1])], minor=True)
+
+        cbar.ax.tick_params(which="major", labelsize=fontsize - 3, direction="in",
+                            color=plot_settings["colorbar_major_ticks_color"],
+                            width=plot_settings["colorbar_major_ticks_width"],
+                            length=plot_settings["colorbar_major_ticks_length"],
+                            pad=plot_settings["colorbar_major_ticks_pad"])
+        cbar.ax.tick_params(which="minor", labelsize=fontsize - 3, direction="in",
+                            color=plot_settings["colorbar_minor_ticks_color"],
+                            width=plot_settings["colorbar_minor_ticks_width"],
+                            length=plot_settings["colorbar_minor_ticks_length"],
+                            pad=plot_settings["colorbar_minor_ticks_pad"])
+
+        cbar_label_text = r"Relative probability $P/P_{\mathrm{max}}$"
+        cbar.set_label(cbar_label_text, fontsize=plot_settings["colorbar_label_fontsize"],
+                       labelpad=plot_settings["colorbar_label_pad"],
+                       rotation=plot_settings["colorbar_label_rotation"])
+        cbar_ax_to_return = cbar_ax
+
+    # Return plot objects
+    return fig, ax, cbar_ax_to_return
+
+
+
 def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
                       x_label: str, n_bins: tuple, x_bounds = None, 
                       credible_regions = [], plot_relative_probability = True, 
                       add_mean_posterior_marker = True,
+                      add_max_posterior_marker = True,
                       fill_color_below_graph=False,
                       shaded_credible_region_bands = True,
-                      plot_settings = gambit_plot_settings.plot_settings) -> None:
+                      plot_settings = gambit_plot_settings.plot_settings,
+                      return_plot_details = False) -> None:
+
+    # Initialize plot_details dict
+    if return_plot_details:
+        plot_details = {}
 
     # Sanity checks
     if not (x_data.shape == posterior_weights.shape):
@@ -1312,12 +1603,23 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
     if plot_relative_probability:
         y_data = y_data / np.max(y_data)
 
+    # Store histogram data
+    if return_plot_details:
+        plot_details["main_graph_x_data"] = x_edges
+        plot_details["main_graph_y_data"] = y_data
+
     if fill_color_below_graph:
         plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
     plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="step", color=plot_settings["1D_posterior_color"])
 
     # Draw credible region lines?
     if len(credible_regions) > 0:
+
+        # Initialize cl_lines_y_vals and cl_fill_between_coordinates
+        if return_plot_details:
+            plot_details["cl_lines_y_vals"] = []
+            if shaded_credible_region_bands:
+                plot_details["cl_fill_between_coordinates"] = []
 
         # For each requested CR line, find the posterior 
         # density height at which to draw the line. 
@@ -1326,25 +1628,68 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
         normalized_cumulative_sum = cumulative_sum / cumulative_sum[-1]
         for cr in credible_regions:
             line_y_val = sorted_hist[np.searchsorted(normalized_cumulative_sum, cr)]
+            # Store credible region line y-value
+            if return_plot_details:
+                plot_details["cl_lines_y_vals"].append(line_y_val)
+
             ax.plot([x_min, x_max], [line_y_val, line_y_val], color=plot_settings["1D_posterior_color"], linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
             cr_text = f"${100*cr:.1f}\\%\\,$CR"
             ax.text(0.06, line_y_val, cr_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"], 
                     color=plot_settings["1D_posterior_color"], transform = ax.transAxes)
 
             if shaded_credible_region_bands:
-                new_y_data = deepcopy(y_data)
-                new_y_data[new_y_data < line_y_val] = 0.0
-                plt.hist(x_edges[:-1], n_bins, weights=new_y_data, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
+                new_y_data_shaded = deepcopy(y_data) # Use a different variable name to avoid confusion
+                new_y_data_shaded[new_y_data_shaded < line_y_val] = 0.0
+                plt.hist(x_edges[:-1], n_bins, weights=new_y_data_shaded, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
+
+                # Store fill coordinates for shaded bands
+                if return_plot_details:
+                    current_cl_fill_info = {"fill_starts_x": [], "fill_ends_x": [], "fill_starts_y": [], "fill_ends_y": []}
+                    in_segment = False
+                    for i in range(len(y_data)):
+                        if y_data[i] >= line_y_val and not in_segment:
+                            # Start of a new segment
+                            in_segment = True
+                            current_cl_fill_info["fill_starts_x"].append(x_edges[i])
+                            current_cl_fill_info["fill_starts_y"].append(line_y_val) # Or y_data[i] if top of segment start
+                        elif y_data[i] < line_y_val and in_segment:
+                            # End of a segment
+                            in_segment = False
+                            current_cl_fill_info["fill_ends_x"].append(x_edges[i]) # x_edges[i] is the right edge of bin i-1, which is correct here
+                            current_cl_fill_info["fill_ends_y"].append(line_y_val) # Or y_data[i-1] if top of segment end
+
+                    # If the last segment extends to the end of the histogram
+                    if in_segment:
+                        current_cl_fill_info["fill_ends_x"].append(x_edges[-1])
+                        current_cl_fill_info["fill_ends_y"].append(line_y_val) # Or y_data[-1]
+
+                    plot_details["cl_fill_between_coordinates"].append(current_cl_fill_info)
 
     # Add marker at the mean posterior point
     if add_mean_posterior_marker:
-        x_mean = np.average(x_data, weights=posterior_weights)
-        y_mean = 0.0
-        ax.scatter(x_mean, y_mean, marker=plot_settings["posterior_mean_marker"], s=plot_settings["posterior_mean_marker_size"], c=plot_settings["posterior_mean_marker_color"],
+        x_post_mean_marker = np.average(x_data, weights=posterior_weights)
+        y_post_mean_marker = 0.0
+        ax.scatter(x_post_mean_marker, y_post_mean_marker, marker=plot_settings["posterior_mean_marker"], s=plot_settings["posterior_mean_marker_size"], c=plot_settings["posterior_mean_marker_color"],
                    edgecolor=plot_settings["posterior_mean_marker_edgecolor"], linewidth=plot_settings["posterior_mean_marker_linewidth"], zorder=100, clip_on=False)
+        # Store mean posterior marker coordinate
+        if return_plot_details:
+            plot_details["mean_posterior_coordinate"] = x_post_mean_marker
+
+    # Add marker at the max posterior point
+    if add_max_posterior_marker:
+        x_post_max_marker = x_centers[np.argmax(histogram)]
+        y_post_max_marker = 0.0
+        ax.scatter(x_post_max_marker, y_post_max_marker, marker=plot_settings["posterior_max_marker"], s=plot_settings["posterior_max_marker_size"], c=plot_settings["posterior_max_marker_color"],
+                   edgecolor=plot_settings["posterior_max_marker_edgecolor"], linewidth=plot_settings["posterior_max_marker_linewidth"], zorder=100, clip_on=False)
+        # Store max posterior marker coordinate
+        if return_plot_details:
+            plot_details["max_posterior_coordinate"] = x_post_max_marker
 
     # Return plot
-    return fig, ax
+    if return_plot_details:
+        return fig, ax, plot_details
+    else:
+        return fig, ax
 
 
 
