@@ -73,10 +73,10 @@ By default this package will attempt to use Matplotlib's functionality for [rend
   <img src="example_plots/conditional_profile_intervals__mu__sigma__LogLike__shaded.png" alt="conditional confidence interval plot, shaded" width="350"/>
   <img src="example_plots/conditional_profile_intervals__mu__sigma__LogLike__colored.png" alt="conditional confidence interval plot, colored" width="350"/>
 
-  By setting the argument `x_condition` to `x_condition="upperbound"` or `x_condition="lowerbound"` the confidence intervals for the y variable are conditioned on the x variable being below or above the given threshold:
+  By setting the argument `x_condition` to `x_condition="upperbound"` or `x_condition="lowerbound"` the confidence intervals for the y variable are conditioned on the x variable being below or above the given value on the x axis:
 
   <img src="example_plots/conditional_profile_intervals__mu_upperbound__sigma__LogLike__shaded.png" alt="conditional confidence interval plot, shaded" width="350"/>
-  <img src="example_plots/conditional_profile_intervals__mu_lowerbound__sigma__LogLike__colored.png" alt="conditional confidence interval plot, colored" width="350"/>
+  <img src="example_plots/conditional_profile_intervals__mu_lowerbound__sigma__LogLike__shaded.png" alt="conditional confidence interval plot, colored" width="350"/>
 
 
 ### 1D posterior plots
