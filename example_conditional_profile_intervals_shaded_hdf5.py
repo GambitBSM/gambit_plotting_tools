@@ -100,6 +100,7 @@ fig, ax, cbar_ax = plot_utils.plot_conditional_profile_intervals(
     draw_interval_connectors=False,
     add_max_likelihood_marker=True,
     shaded_confidence_interval_bands=True,
+    x_condition="bin",  # "bin", "upperbound", "lowerbound"
     plot_settings=plot_settings,
 )
 
