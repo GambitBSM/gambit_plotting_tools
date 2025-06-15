@@ -1004,12 +1004,17 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
                                        draw_interval_connectors=True,
                                        add_max_likelihood_marker=True,
                                        shaded_confidence_interval_bands=False,
+                                       x_condition="bin",
                                        missing_value_color = None, 
                                        plot_settings=gambit_plot_settings.plot_settings):
 
     # This function only works for profile likelihood ratio plots
     z_is_loglike = True
     plot_likelihood_ratio = True
+
+    known_x_conditions = ["bin", "upperbound", "lowerbound"]
+    if x_condition not in known_x_conditions:
+        raise Exception(f"Argument 'x_condition' must be one of {', '.join(known_x_conditions)}.")
 
     # Sort data according to z value, from highest to lowest
     p = np.argsort(z_data)
@@ -1060,10 +1065,17 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
         current_x_min = x_bin_limits[i]
         current_x_max = x_bin_limits[i+1]
 
-        if i == n_bins[0] - 1: # Handle the right edge of the last bin
-            mask = (x_data >= current_x_min) & (x_data <= current_x_max)
-        else:
-            mask = (x_data >= current_x_min) & (x_data < current_x_max)
+        if x_condition == "bin":
+            if i == n_bins[0] - 1: # Handle the right edge of the last bin
+                mask = (x_data >= current_x_min) & (x_data <= current_x_max)
+            else:
+                mask = (x_data >= current_x_min) & (x_data < current_x_max)
+
+        elif x_condition == "upperbound":
+            mask = (x_data <= current_x_max)
+
+        elif x_condition == "lowerbound":
+            mask = (x_data >= current_x_min)
 
         # x_subset = x_data[mask]
         y_subset = deepcopy(y_data[mask])
@@ -1190,6 +1202,10 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
 
     # Set axis labels
     x_label = labels[0]
+    if x_condition == "upperbound":
+        x_label = f"{x_label}, upper bound"
+    elif x_condition == "lowerbound":
+        x_label = f"{x_label}, lower bound"
     y_label = labels[1]
     fontsize = plot_settings["fontsize"]
     plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
