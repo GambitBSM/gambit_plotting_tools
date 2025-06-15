@@ -1,4 +1,4 @@
-from copy import deepcopy
+from copy import copy, deepcopy
 from collections import OrderedDict
 import os
 import shutil
@@ -260,7 +260,7 @@ def save_contour_coordinates(contour, contour_coordinates_output_file, header=""
 
 
 
-def create_empty_figure_1D(xy_bounds, plot_settings):
+def create_empty_figure_1D(xy_bounds, plot_settings, use_facecolor=None):
 
     # Get bounds in x and y
     x_min, x_max = xy_bounds[0]
@@ -271,8 +271,8 @@ def create_empty_figure_1D(xy_bounds, plot_settings):
     figheight_figwidth_ratio = figheight / figwidth
     fig = plt.figure(figsize=(figwidth, figheight))
 
-    pad_left = plot_settings["pad_left"]
-    pad_right = plot_settings["pad_right"]
+    pad_left = plot_settings["pad_left_1D"]
+    pad_right = plot_settings["pad_right_1D"]
     pad_bottom = plot_settings["pad_bottom"]
     pad_top = plot_settings["pad_top"]
 
@@ -283,7 +283,10 @@ def create_empty_figure_1D(xy_bounds, plot_settings):
     left = pad_left
     bottom = pad_bottom
     ax = fig.add_axes((left, bottom, plot_width, plot_height), frame_on=True)
-    ax.set_facecolor(plot_settings["facecolor_plot_1D"])
+    if use_facecolor is not None:
+        ax.set_facecolor(use_facecolor)
+    else:
+        ax.set_facecolor(plot_settings["facecolor_plot_1D"])
 
     # Set frame color and width
     for spine in ax.spines.values():
@@ -587,7 +590,8 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
                     y_is_loglike = True, plot_likelihood_ratio = True,
                     add_max_likelihood_marker = True, fill_color_below_graph = True, 
                     shaded_confidence_interval_bands=True,
-                    plot_settings = gambit_plot_settings.plot_settings) -> None:
+                    plot_settings = gambit_plot_settings.plot_settings,
+                    return_plot_details = False) -> None:
 
     # Sanity checks
     if not (x_data.shape == y_data.shape):
@@ -669,6 +673,9 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
         if (y_is_loglike) and (plot_likelihood_ratio):
             cl_lines_y_vals = get_1D_likelihood_ratio_levels(confidence_levels)
 
+    plot_details = {}
+    if return_plot_details:
+        plot_details["cl_lines_y_vals"] = cl_lines_y_vals
 
     # Make a 1D profile likelihood plot
 
@@ -683,9 +690,13 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
 
     main_graph, = plt.plot(x_values, y_values, linestyle="solid", color=plot_settings["1D_profile_likelihood_color"])
 
+    if return_plot_details:
+        plot_details["main_graph"] = main_graph
 
     # Add shaded confidence interval bands?
     if shaded_confidence_interval_bands:
+
+        cl_fill_between_coordinates = []
 
         for cl_line_y_val in cl_lines_y_vals:
 
@@ -714,10 +725,26 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
             if len(fill_starts_x) != len(fill_ends_x):
                 raise Exception("The lists fill_starts_x and fill_ends_x have different lengths. This should not happen.")
 
-            for i in range(len(fill_starts_x)):
-                
-                x_start, x_end = fill_starts_x[i], fill_ends_x[i]
-                y_start, y_end = fill_starts_y[i], fill_ends_y[i]
+            cl_fill_between_coordinates.append({
+                "fill_starts_x": copy(fill_starts_x),
+                "fill_ends_x": copy(fill_ends_x),
+                "fill_starts_y": copy(fill_starts_y),
+                "fill_ends_y": copy(fill_ends_y),
+            })
+
+        plot_details["cl_fill_between_coordinates"] = cl_fill_between_coordinates
+
+        for i in range(len(cl_lines_y_vals)):
+
+            fill_starts_x = cl_fill_between_coordinates[i]["fill_starts_x"]
+            fill_ends_x = cl_fill_between_coordinates[i]["fill_ends_x"]
+            fill_starts_y = cl_fill_between_coordinates[i]["fill_starts_y"]
+            fill_ends_y = cl_fill_between_coordinates[i]["fill_ends_y"]
+
+            for j in range(len(fill_starts_x)):
+
+                x_start, x_end = fill_starts_x[j], fill_ends_x[j]
+                y_start, y_end = fill_starts_y[j], fill_ends_y[j]
 
                 use_x_values = np.array([x_start] + list(x_values[(x_values > x_start) & (x_values < x_end)]) + [x_end])
                 use_y_values = np.array([y_start] + list(y_values[(x_values > x_start) & (x_values < x_end)]) + [y_end])
@@ -728,8 +755,7 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
                         y2=y_min,
                         color=plot_settings["1D_profile_likelihood_color"],
                         alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
-                        linewidth=0.0)
-
+                    linewidth=0.0)
 
     # Draw confidence level lines
     if len(confidence_levels) > 0:
@@ -747,11 +773,13 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
         x_max_like = x_data[max_like_index]
         ax.scatter(x_max_like, 0.0, marker=plot_settings["max_likelihood_marker"], s=plot_settings["max_likelihood_marker_size"], c=plot_settings["max_likelihood_marker_color"],
                    edgecolor=plot_settings["max_likelihood_marker_edgecolor"], linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100, clip_on=False)
+        plot_details["max_like_coordinate"] = x_max_like
 
     # Return plot
-    return fig, ax
-
-
+    if return_plot_details:
+        return fig, ax, plot_details         
+    else:
+        return fig, ax
 
 
 def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray, 
@@ -970,8 +998,250 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
 
 
 
+def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray, 
+                                       labels: tuple, n_bins: tuple, xy_bounds=None, 
+                                       z_bounds=None, confidence_levels=[],
+                                       draw_interval_connectors=True,
+                                       add_max_likelihood_marker=True,
+                                       shaded_confidence_interval_bands=False,
+                                       missing_value_color = None, 
+                                       plot_settings=gambit_plot_settings.plot_settings):
 
-def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray, 
+    # This function only works for profile likelihood ratio plots
+    z_is_loglike = True
+    plot_likelihood_ratio = True
+
+    # Sort data according to z value, from highest to lowest
+    p = np.argsort(z_data)
+    p = p[::-1]
+    x_data = x_data[p]
+    y_data = y_data[p]
+    z_data = z_data[p]
+
+    # Since z is loglike, adjust data
+    z_data = z_data - np.max(z_data)
+
+    # Get the highest and lowest z values
+    z_max = z_data[0]
+    z_min = z_data[-1]
+
+    # Determine bounds
+    if xy_bounds is None:
+        # Determine bounds from data if not provided
+        x_min_data, x_max_data = np.min(x_data), np.max(x_data)
+        y_min_data, y_max_data = np.min(y_data), np.max(y_data)
+        xy_bounds = ([x_min_data, x_max_data], [y_min_data, y_max_data])
+
+    xy_bounds[0][0] -= np.finfo(float).eps
+    xy_bounds[0][1] += np.finfo(float).eps
+    xy_bounds[1][0] -= np.finfo(float).eps
+    xy_bounds[1][1] += np.finfo(float).eps
+    x_min, x_max = xy_bounds[0]
+    y_min, y_max = xy_bounds[1]
+
+    if z_bounds is None:
+        z_bounds = (0.0, 1.0)
+
+    # Define x-bins
+    x_bin_limits = np.linspace(x_min, x_max, n_bins[0] + 1)
+
+    # Loop over x bins
+    Z_values_2D = np.full((n_bins[1] + 1, n_bins[0]), np.nan)
+    if plot_settings["interpolation"]:
+        Z_values_2D = np.full((plot_settings["interpolation_resolution"] + 1, n_bins[0]), np.nan)
+        y_coarse = np.linspace(y_min, y_max, n_bins[1] + 1)
+        y_fine = np.linspace(y_min, y_max, plot_settings["interpolation_resolution"] + 1)
+
+    ci_boundaries = []
+    max_likelihood_coordinates = []
+
+    for i in range(n_bins[0]):
+        # Select data for current x-bin
+        current_x_min = x_bin_limits[i]
+        current_x_max = x_bin_limits[i+1]
+
+        if i == n_bins[0] - 1: # Handle the right edge of the last bin
+            mask = (x_data >= current_x_min) & (x_data <= current_x_max)
+        else:
+            mask = (x_data >= current_x_min) & (x_data < current_x_max)
+
+        # x_subset = x_data[mask]
+        y_subset = deepcopy(y_data[mask])
+        z_subset = deepcopy(z_data[mask])
+
+        # If no data, continue to next x bin
+        if len(y_subset) == 0:
+            continue
+
+        _, _, plot_details = plot_1D_profile(
+            y_subset, z_subset, labels[1], n_bins[1], xy_bounds[1], 
+            confidence_levels = confidence_levels, 
+            y_fill_value = -1*np.finfo(float).max,
+            y_is_loglike = True, 
+            plot_likelihood_ratio = True,
+            add_max_likelihood_marker = add_max_likelihood_marker, 
+            fill_color_below_graph = True, 
+            shaded_confidence_interval_bands=True,
+            plot_settings = plot_settings,
+            return_plot_details = True
+        )
+        plt.close()  # plot_1D_profile creates new figures, so we should close them 
+
+        # Get the Z data
+        use_z = plot_details["main_graph"].get_ydata()    
+        if plot_settings["interpolation"]:
+            use_z = np.interp(y_fine, y_coarse, use_z)
+        Z_values_2D[:, i] = use_z
+
+        # Get confidence interval boundaries
+        ci_boundaries.append(plot_details["cl_fill_between_coordinates"])
+
+        # Get marker position
+        if add_max_likelihood_marker:
+            max_likelihood_coordinates.append(plot_details["max_like_coordinate"])
+
+
+    # Create an empty figure using our plot settings
+    if shaded_confidence_interval_bands:
+        fig, ax = create_empty_figure_1D(xy_bounds, plot_settings)
+    else:
+        if missing_value_color is None:
+            missing_value_color = plot_settings["facecolor_plot"]
+        fig, ax = create_empty_figure_2D(xy_bounds, plot_settings, use_facecolor=missing_value_color)
+
+    # Create color normalization
+    norm = matplotlib.cm.colors.Normalize(vmin=z_bounds[0], vmax=z_bounds[1])
+
+    # Make 2D color plot
+    if not shaded_confidence_interval_bands:
+        im = ax.imshow(
+            Z_values_2D,
+            extent=(x_min, x_max, y_min, y_max),
+            origin="lower",
+            aspect="auto",
+            cmap=plot_settings["colormap"],
+            interpolation="none",
+            norm=norm,
+        )
+
+    for i in range(n_bins[0]):
+        current_x_min = x_bin_limits[i]
+        current_x_max = x_bin_limits[i+1]
+        current_x_bin_centre = 0.5 * (current_x_min + current_x_max)
+
+        x_bin_ci_bounds = ci_boundaries[i]
+
+        for ci_idx,d in enumerate(x_bin_ci_bounds):
+            ci_starts = d["fill_starts_x"]
+            ci_ends = d["fill_ends_x"]
+
+            assert(len(ci_starts) == len(ci_ends))
+            for start,end in zip(ci_starts, ci_ends):
+
+                # _Anders
+                if shaded_confidence_interval_bands:
+                    plt.fill_between(
+                        x=[current_x_min, current_x_max],
+                        y1=[start, start], 
+                        y2=[end, end], 
+                        color=plot_settings["1D_profile_likelihood_color"],
+                        alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
+                        linewidth=0.0,
+                        zorder=0,
+                    )
+
+                plt.plot(
+                    [current_x_min, current_x_max], [start, start], 
+                    color=plot_settings["contour_color"], 
+                    linewidth=plot_settings["contour_linewidth"],
+                    linestyle=plot_settings["contour_linestyle"],
+                    zorder=0,
+                )
+                plt.plot(
+                    [current_x_min, current_x_max], [end, end], 
+                    color=plot_settings["contour_color"], 
+                    linewidth=plot_settings["contour_linewidth"],
+                    linestyle=plot_settings["contour_linestyle"],
+                    zorder=0,
+                )
+                if draw_interval_connectors:
+                    plt.plot(
+                        [current_x_bin_centre, current_x_bin_centre], [start, end], 
+                        color=plot_settings["connector_color"], 
+                        linewidth=plot_settings["connector_linewidth"],
+                        linestyle=plot_settings["connector_linestyle"],
+                        zorder=0,
+                    )
+
+        if add_max_likelihood_marker:
+            max_like_y_coord = max_likelihood_coordinates[i]
+            ax.scatter(current_x_bin_centre, max_like_y_coord, marker=plot_settings["max_likelihood_marker"], s=plot_settings["max_likelihood_marker_size"], c=plot_settings["max_likelihood_marker_color"],
+                       edgecolor=plot_settings["max_likelihood_marker_edgecolor"], linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100, clip_on=False)
+
+        # Add vertical separators
+        if i > 0:
+            plt.plot(
+                [current_x_min, current_x_min], [y_min, y_max], 
+                color=plot_settings["separator_color"],
+                linewidth=plot_settings["separator_linewidth"],
+                linestyle="solid",
+                zorder=1,
+            )
+
+    # Set axis labels
+    x_label = labels[0]
+    y_label = labels[1]
+    fontsize = plot_settings["fontsize"]
+    plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
+    plt.ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
+
+    # Add colorbar
+    if shaded_confidence_interval_bands:
+        cbar_ax = None
+    else:
+        cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"], height=plot_settings["colorbar_height"],
+                             loc=plot_settings["colorbar_loc"], borderpad=plot_settings["colorbar_borderpad"])
+        cbar = fig.colorbar(im, cax=cbar_ax, orientation=plot_settings["colorbar_orientation"])
+        cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
+        cbar.outline.set_linewidth(plot_settings["framewidth"])
+
+        cbar.set_ticks(np.linspace(z_bounds[0], z_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
+        minor_tick_values = np.linspace(z_bounds[0], z_bounds[1], plot_settings["colorbar_n_minor_ticks"])
+        cbar.set_ticks(minor_tick_values[(minor_tick_values >= z_bounds[0]) & (minor_tick_values <= z_bounds[1])], minor=True)
+
+        cbar.ax.tick_params(which="major", labelsize=fontsize - 3, direction="in",
+                            color=plot_settings["colorbar_major_ticks_color"],
+                            width=plot_settings["colorbar_major_ticks_width"],
+                            length=plot_settings["colorbar_major_ticks_length"], # Typo: should be colorbar_major_ticks_length
+                            pad=plot_settings["colorbar_major_ticks_pad"])
+        cbar.ax.tick_params(which="minor", labelsize=fontsize - 3, direction="in",
+                            color=plot_settings["colorbar_minor_ticks_color"],
+                            width=plot_settings["colorbar_minor_ticks_width"],
+                            length=plot_settings["colorbar_minor_ticks_length"], # Typo: should be colorbar_minor_ticks_length
+                            pad=plot_settings["colorbar_minor_ticks_pad"])
+
+        if len(labels) > 2:
+            cbar_label_text = labels[2]
+        else:
+            cbar_label_text = "Profile likelihood" # Default
+
+        if z_is_loglike and not plot_likelihood_ratio:
+            cbar_label_text = r"$\ln L - \ln L_{\mathrm{max}}$"
+        elif z_is_loglike and plot_likelihood_ratio:
+            cbar_label_text = r"Profile likelihood ratio $\Lambda = L/L_{\mathrm{max}}$"
+
+        cbar.set_label(cbar_label_text, fontsize=plot_settings["colorbar_label_fontsize"],
+                       labelpad=plot_settings["colorbar_label_pad"],
+                       rotation=plot_settings["colorbar_label_rotation"])
+
+    # Return plot objects
+    return fig, ax, cbar_ax
+
+
+
+def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
                       x_label: str, n_bins: tuple, x_bounds = None, 
                       credible_regions = [], plot_relative_probability = True, 
                       add_mean_posterior_marker = True,
