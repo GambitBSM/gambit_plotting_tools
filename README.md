@@ -61,6 +61,18 @@ By default this package will attempt to use Matplotlib's functionality for [rend
   <img src="example_plots/2D_profile__mu__sigma__LogLike__color_data.png" alt="2D profile likelihood example plot coloring from different dataset" width="500"/>
   
 
+### Conditional confidence intervals
+
+- Make a series of confidence intervals for the y variable, conditioned on the x variable being within a given range
+  ```terminal
+  python example_conditional_profile_intervals_shaded_hdf5.py
+  python example_conditional_profile_intervals_colored_hdf5.py
+  ```
+  These examples give plots looking like this:
+
+  <img src="example_plots/conditional_profile_intervals__mu__sigma__LogLike__shaded.png" alt="conditional confidence interval plot, shaded" width="350"/>
+  <img src="example_plots/conditional_profile_intervals__mu__sigma__LogLike__colored.png" alt="conditional confidence interval plot, colored" width="350"/>
+
 
 ### 1D posterior plots
 

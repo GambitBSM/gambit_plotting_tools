@@ -26,6 +26,9 @@ plot_settings = {
     "pad_bottom": 0.16,
     "pad_top": 0.05,
 
+    "pad_left_1D": 0.19,
+    "pad_right_1D": 0.18,
+
     "fontsize": 14,
 
     "1D_posterior_color": "blue",
@@ -65,6 +68,13 @@ plot_settings = {
     "contour_color": "white",
     "contour_linestyle": "solid",
     "close_likelihood_contours": True,
+
+    "separator_linewidth": 1.2,
+    "separator_color": "black",
+
+    "connector_linewidth": 1.0,
+    "connector_color": "white",
+    "connector_linestyle": "dotted",
 
     "max_likelihood_marker": "*",
     "max_likelihood_marker_size": 100,
