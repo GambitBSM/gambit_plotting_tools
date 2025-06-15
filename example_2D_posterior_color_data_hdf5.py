@@ -57,11 +57,11 @@ plot_labels = {
 }
 
 # Number of bins
-xy_bins = (50, 50)
+xy_bins = (100, 100)
 
 # Load default plot settings (and make adjustments if necessary)
 plot_settings = deepcopy(gambit_plot_settings.plot_settings)
-plot_settings["colormap"] = matplotlib.colormaps["inferno"]
+plot_settings["colormap"] = matplotlib.colormaps["managua"]
 
 # Discretize colormap?
 n_colors = 20
@@ -94,7 +94,7 @@ fig, ax, cbar_ax = plot_utils.plot_2D_posterior(
     color_posterior_bins=n_colors,
     color_label=plot_labels.get(c_key, c_key),
     color_bounds=dataset_bounds["color_data"],
-    # color_within_credible_region=credible_regions[-1],
+    color_within_credible_region=credible_regions[-1],
     missing_value_color=plot_settings["facecolor_plot"],
     plot_settings=plot_settings,
 )
