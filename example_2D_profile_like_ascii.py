@@ -52,6 +52,7 @@ plot_labels = {
     "p1": r"$p_1$ (unit)",
     "p2": r"$p_2$ (unit)",
     "p3": r"$p_3$ (unit)",
+    "lnL": r"$\ln L$",
 }
 
 # Number of bins used for profiling
@@ -80,7 +81,7 @@ fig, ax, cbar_ax = plot_utils.plot_2D_profile(
     z_is_loglike=True,
     plot_likelihood_ratio=True,
     contour_levels=likelihood_ratio_contour_values,
-    z_fill_value = -1*np.finfo(float).max,
+    missing_value_color=plot_settings["colormap"](0.0),
     add_max_likelihood_marker = True,
     plot_settings=plot_settings,
 )
