@@ -412,6 +412,10 @@ def bin_and_profile_1D(x_data, y_data, n_bins, x_bounds,
                        already_sorted=False, 
                        y_fill_value=-1*np.finfo(float).max):
 
+    # Make local copies
+    x_data = np.copy(x_data)
+    y_data = np.copy(y_data)
+
     # Number of points
     n_pts = x_data.shape[0]
 
@@ -486,6 +490,12 @@ def bin_and_profile_1D(x_data, y_data, n_bins, x_bounds,
 def bin_and_profile_2D(x_data, y_data, z_data, n_bins, xy_bounds, 
                        c_data=None, already_sorted=False, 
                        z_fill_value=np.nan, c_fill_value=np.nan):
+
+    # Make local copies
+    x_data = np.copy(x_data)
+    y_data = np.copy(y_data)
+    z_data = np.copy(z_data)
+    c_data = np.copy(c_data) if c_data is not None else None
 
     # Number of points
     n_pts = x_data.shape[0]
@@ -592,6 +602,11 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
                     shaded_confidence_interval_bands=True,
                     plot_settings = gambit_plot_settings.plot_settings,
                     return_plot_details = False) -> None:
+
+    # Make local copies
+    x_data = np.copy(x_data)
+    y_data = np.copy(y_data)
+    x_bounds = deepcopy(x_bounds) if x_bounds is not None else None
 
     # Sanity checks
     if not (x_data.shape == y_data.shape):
@@ -791,6 +806,14 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
                     color_bounds = None, color_z_condition = None,
                     missing_value_color= None,
                     plot_settings = gambit_plot_settings.plot_settings) -> None:
+
+    # Make local copies
+    x_data = np.copy(x_data)
+    y_data = np.copy(y_data)
+    z_data = np.copy(z_data)
+    color_data = np.copy(color_data) if color_data is not None else None
+    xy_bounds = deepcopy(xy_bounds) if xy_bounds is not None else None
+    contour_levels = list(contour_levels) if contour_levels is not None else []
 
     # Sanity checks
     if not (x_data.shape == y_data.shape == z_data.shape):
@@ -1008,6 +1031,12 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
                                        x_condition="bin",
                                        missing_value_color = None, 
                                        plot_settings=gambit_plot_settings.plot_settings):
+
+    # Make local copies
+    x_data = np.copy(x_data)
+    y_data = np.copy(y_data)
+    z_data = np.copy(z_data)
+    xy_bounds = deepcopy(xy_bounds) if xy_bounds is not None else None
 
     # This function only works for profile likelihood ratio plots
     z_is_loglike = True
@@ -1278,6 +1307,9 @@ def plot_conditional_credible_intervals(
     x_condition="bin",
     missing_value_color=None,
     plot_settings=gambit_plot_settings.plot_settings):
+
+    # Make local copies
+    xy_bounds = deepcopy(xy_bounds) if xy_bounds is not None else None
 
     cbar_ax_to_return = None
 
@@ -1552,6 +1584,9 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
                       plot_settings = gambit_plot_settings.plot_settings,
                       return_plot_details = False) -> None:
 
+    # Make local copies
+    x_bounds = deepcopy(x_bounds) if x_bounds is not None else None
+
     # Initialize plot_details dict
     if return_plot_details:
         plot_details = {}
@@ -1707,6 +1742,9 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
                       color_within_credible_region = None,
                       missing_value_color = None,
                       plot_settings = gambit_plot_settings.plot_settings) -> None:
+
+    # Make local copies
+    xy_bounds = deepcopy(xy_bounds) if xy_bounds is not None else None
 
     # Sanity checks
     if not (x_data.shape == y_data.shape == posterior_weights.shape):
