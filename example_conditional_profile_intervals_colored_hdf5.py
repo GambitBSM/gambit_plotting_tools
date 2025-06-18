@@ -68,12 +68,12 @@ plot_settings["max_likelihood_marker"] = "D"  # Diamond marker
 plot_settings["max_likelihood_marker_size"] = 10
 plot_settings["max_likelihood_marker_linewidth"] = 0.8
 
-plot_settings["contour_linewidth"] = 1.0
-plot_settings["contour_color"] = "white"
-plot_settings["contour_linestyle"] = "solid"
+plot_settings["contour_linewidths"] = [1.0]
+plot_settings["contour_colors"] = ["white"]
+plot_settings["contour_linestyles"] = ["solid"]
 
-plot_settings["connector_linewidth"] = plot_settings["contour_linewidth"] * 0.5
-plot_settings["connector_color"] = plot_settings["contour_color"]
+plot_settings["connector_linewidth"] = plot_settings["contour_linewidths"][0] * 0.5
+plot_settings["connector_color"] = plot_settings["contour_colors"][0]
 plot_settings["connector_linestyle"] = "dotted"
 
 # Discretize colormap?

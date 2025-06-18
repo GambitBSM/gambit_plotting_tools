@@ -117,12 +117,12 @@ else:
 add_header(header_text, ax=ax)
 
 # Add anything else to the plot, e.g. some more lines and labels and stuff
-ax.plot([20.0, 30.0], [5.0, 3.0], color="white", linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
+ax.plot([20.0, 30.0], [5.0, 3.0], color="white", linewidth=plot_settings["contour_linewidths"][0], linestyle="dashed")
 fig.text(0.53, 0.79, "A very important line!", ha="left", va="center", rotation=-31.5, fontsize=plot_settings["fontsize"]-5, color="white")
 
 # Draw a contour using coordinates stored in a .csv file
 x_contour, y_contour = np.loadtxt("./example_data/contour_coordinates.csv", delimiter=",", usecols=(0, 1), unpack=True)
-ax.plot(x_contour, y_contour, color="midnightblue", linestyle="dashed", linewidth=plot_settings["contour_linewidth"], alpha=1.0)
+ax.plot(x_contour, y_contour, color="midnightblue", linestyle="dashed", linewidth=plot_settings["contour_linewidths"][0], alpha=1.0)
 fig.text(0.23, 0.23, "Overlaid contour from\n coordinates in some data file", ha="left", va="center", fontsize=plot_settings["fontsize"]-5, color="midnightblue")
 
 # Save to file

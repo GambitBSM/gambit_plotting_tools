@@ -64,9 +64,9 @@ plot_settings = {
     "xlabel_pad": 6,
     "ylabel_pad": 12,
 
-    "contour_linewidth": 1.0,
-    "contour_color": "white",
-    "contour_linestyle": "solid",
+    "contour_linewidths": [1.0],
+    "contour_colors": ["white"],
+    "contour_linestyles": ["solid"],
     "close_likelihood_contours": True,
 
     "separator_linewidth": 1.2,

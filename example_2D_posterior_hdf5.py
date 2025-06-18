@@ -100,7 +100,7 @@ else:
 add_header(header_text, ax=ax)
 
 # Add anything else to the plot, e.g. some more lines and labels and stuff
-ax.plot([20.0, 30.0], [5.0, 3.0], color="white", linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
+ax.plot([20.0, 30.0], [5.0, 3.0], color="white", linewidth=plot_settings["contour_linewidths"][0], linestyle="dashed")
 fig.text(0.53, 0.79, "A very important line!", ha="left", va="center", rotation=-31.5, fontsize=plot_settings["fontsize"]-5, color="white")
 
 # Add a star marker at the maximum likelihood point

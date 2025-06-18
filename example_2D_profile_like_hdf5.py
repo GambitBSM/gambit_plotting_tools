@@ -31,7 +31,7 @@ data = plot_utils.read_hdf5_datasets([(hdf5_file, group_name)], datasets, filter
 # 
 
 # Get contour levels
-confidence_levels = [0.683, 0.954]
+confidence_levels = [0.954, 0.683]
 likelihood_ratio_contour_values = plot_utils.get_2D_likelihood_ratio_levels(confidence_levels)
 
 # Plot variables
@@ -60,6 +60,10 @@ xy_bins = (100, 100)
 plot_settings = deepcopy(gambit_plot_settings.plot_settings)
 plot_settings["interpolation"] = True
 plot_settings["interpolation_resolution"] = 400
+
+plot_settings["contour_colors"] = ["white"]      # Add more entries to modify the appearance of individual contours
+plot_settings["contour_linestyles"] = ["solid"]
+plot_settings["contour_linewidths"] = [1.0]
 
 # Discretize colormap?
 # n_colors = 20
@@ -107,12 +111,12 @@ else:
 add_header(header_text, ax=ax)
 
 # Add anything else to the plot, e.g. some more lines and labels and stuff
-ax.plot([20.0, 30.0], [5.0, 3.0], color="white", linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
+ax.plot([20.0, 30.0], [5.0, 3.0], color="white", linewidth=plot_settings["contour_linewidths"][0], linestyle="dashed")
 fig.text(0.53, 0.79, "A very important line!", ha="left", va="center", rotation=-31.5, fontsize=plot_settings["fontsize"]-5, color="white")
 
 # Draw a contour using coordinates stored in a .csv file
 x_contour, y_contour = np.loadtxt("./example_data/contour_coordinates.csv", delimiter=",", usecols=(0, 1), unpack=True)
-ax.plot(x_contour, y_contour, color="orange", linestyle="dashed", linewidth=plot_settings["contour_linewidth"], alpha=0.7)
+ax.plot(x_contour, y_contour, color="orange", linestyle="dashed", linewidth=plot_settings["contour_linewidths"][0], alpha=0.7)
 fig.text(0.23, 0.23, "Overlaid contour from\n coordinates in some data file", ha="left", va="center", fontsize=plot_settings["fontsize"]-5, color="orange")
 
 # Save to file

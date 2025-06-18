@@ -3,6 +3,7 @@ from collections import OrderedDict
 import os
 import shutil
 import numpy as np
+from itertools import cycle
 import h5py
 import matplotlib
 import matplotlib.pyplot as plt
@@ -775,9 +776,11 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
     # Draw confidence level lines
     if len(confidence_levels) > 0:
 
+        linewidths = cycle(list(plot_settings["contour_linewidths"]))
+
         for i,cl in enumerate(confidence_levels):
             cl_line_y_val = cl_lines_y_vals[i]
-            ax.plot([x_min, x_max], [cl_line_y_val, cl_line_y_val], color=plot_settings["1D_profile_likelihood_color"], linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
+            ax.plot([x_min, x_max], [cl_line_y_val, cl_line_y_val], color=plot_settings["1D_profile_likelihood_color"], linewidth=next(linewidths), linestyle="dashed")
             cl_text = f"${100*cl:.1f}\\%\\,$CL"
             ax.text(0.06, cl_line_y_val, cl_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"], 
                     color=plot_settings["1D_profile_likelihood_color"], transform = ax.transAxes)
@@ -966,9 +969,9 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     if len(contour_levels) > 0:
         contour_levels.sort()
         contour = ax.contour(x_values_plot, y_values_plot, z_values_plot, contour_levels, 
-                             colors=plot_settings["contour_color"], 
-                             linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), 
-                             linestyles=plot_settings["contour_linestyle"])
+                             colors=list(plot_settings["contour_colors"]), 
+                             linewidths=list(plot_settings["contour_linewidths"]),
+                             linestyles=list(plot_settings["contour_linestyles"]))
 
         # Save contour coordinates to file?
         if contour_coordinates_output_file != None:
@@ -1182,6 +1185,13 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
         x_bin_ci_bounds = ci_boundaries[i]
 
         for ci_idx, ci_dict in enumerate(x_bin_ci_bounds):
+
+            # _Anders
+            if draw_interval_limits:
+                use_color = plot_settings["contour_colors"][ci_idx % len(plot_settings["contour_colors"])]
+                use_linewidth = plot_settings["contour_linewidths"][ci_idx % len(plot_settings["contour_linewidths"])]
+                use_linestyle = plot_settings["contour_linestyles"][ci_idx % len(plot_settings["contour_linestyles"])]
+
             ci_starts = ci_dict["fill_starts_x"]
             ci_ends = ci_dict["fill_ends_x"]
 
@@ -1202,16 +1212,16 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
                 if draw_interval_limits:
                     plt.plot(
                         [current_x_min, current_x_max], [start, start], 
-                        color=plot_settings["contour_color"], 
-                        linewidth=plot_settings["contour_linewidth"],
-                        linestyle=plot_settings["contour_linestyle"],
+                        color=use_color, 
+                        linewidth=use_linewidth,
+                        linestyle=use_linestyle,
                         zorder=0,
                     )
                     plt.plot(
                         [current_x_min, current_x_max], [end, end], 
-                        color=plot_settings["contour_color"], 
-                        linewidth=plot_settings["contour_linewidth"],
-                        linestyle=plot_settings["contour_linestyle"],
+                        color=use_color, 
+                        linewidth=use_linewidth,
+                        linestyle=use_linestyle,
                         zorder=0,
                     )
                 if draw_interval_connectors:
@@ -1456,6 +1466,12 @@ def plot_conditional_credible_intervals(
             starts_y_coords = cr_dict["fill_starts_x"]
             ends_y_coords = cr_dict["fill_ends_x"]
 
+            # _Anders
+            if draw_interval_limits:
+                use_color = plot_settings["contour_colors"][cr_idx % len(plot_settings["contour_colors"])]
+                use_linewidth = plot_settings["contour_linewidths"][cr_idx % len(plot_settings["contour_linewidths"])]
+                use_linestyle = plot_settings["contour_linestyles"][cr_idx % len(plot_settings["contour_linestyles"])]
+
             assert(len(starts_y_coords) == len(ends_y_coords))
             for k in range(len(starts_y_coords)):
                 start_y = starts_y_coords[k]
@@ -1475,16 +1491,16 @@ def plot_conditional_credible_intervals(
                 if draw_interval_limits:
                     plt.plot(
                         [current_x_min, current_x_max], [start_y, start_y],
-                        color=plot_settings["contour_color"],
-                        linewidth=plot_settings["contour_linewidth"],
-                        linestyle=plot_settings["contour_linestyle"],
+                        color=use_color,
+                        linewidth=use_linewidth,
+                        linestyle=use_linestyle,
                         zorder=0,
                     )
                     plt.plot(
                         [current_x_min, current_x_max], [end_y, end_y],
-                        color=plot_settings["contour_color"],
-                        linewidth=plot_settings["contour_linewidth"],
-                        linestyle=plot_settings["contour_linestyle"],
+                        color=use_color,
+                        linewidth=use_linewidth,
+                        linestyle=use_linestyle,
                         zorder=0,
                 )
                 if draw_interval_connectors:
@@ -1661,13 +1677,16 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
         sorted_hist = np.sort(y_data)[::-1]
         cumulative_sum = np.cumsum(sorted_hist)
         normalized_cumulative_sum = cumulative_sum / cumulative_sum[-1]
+        
+        linewidths = cycle(list(plot_settings["contour_linewidths"]))
+        
         for cr in credible_regions:
             line_y_val = sorted_hist[np.searchsorted(normalized_cumulative_sum, cr)]
             # Store credible region line y-value
             if return_plot_details:
                 plot_details["cl_lines_y_vals"].append(line_y_val)
 
-            ax.plot([x_min, x_max], [line_y_val, line_y_val], color=plot_settings["1D_posterior_color"], linewidth=plot_settings["contour_linewidth"], linestyle="dashed")
+            ax.plot([x_min, x_max], [line_y_val, line_y_val], color=plot_settings["1D_posterior_color"], linewidth=next(linewidths), linestyle="dashed")
             cr_text = f"${100*cr:.1f}\\%\\,$CR"
             ax.text(0.06, line_y_val, cr_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"], 
                     color=plot_settings["1D_posterior_color"], transform = ax.transAxes)
@@ -1901,8 +1920,8 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
         contour_levels.sort()
 
         if contour_levels: # Only draw contours if levels were actually computed
-            contour = ax.contour(X, Y, histogram.T, contour_levels, colors=plot_settings["contour_color"],
-                                 linewidths=[plot_settings["contour_linewidth"]]*len(contour_levels), linestyles=plot_settings["contour_linestyle"])
+            contour = ax.contour(X, Y, histogram.T, contour_levels, colors=plot_settings["contour_colors"],
+                                 linewidths=plot_settings["contour_linewidths"], linestyles=plot_settings["contour_linestyles"])
 
             # Save contour coordinates to file?
             if contour_coordinates_output_file != None:
