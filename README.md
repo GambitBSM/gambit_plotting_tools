@@ -101,7 +101,7 @@ By default this package will attempt to use Matplotlib's functionality for [rend
   <img src="example_plots/2D_posterior__mu__sigma.png" alt="2D posterior example plot" width="500"/>
 
 
-- Make 2D posterior credible regions colored according to the posterior max or mean of a third dataset
+- Make 2D posterior credible regions coloured according to the posterior max or mean of a third dataset
   ```terminal
   python example_2D_posterior_color_data_hdf5.py
   ```
@@ -123,6 +123,17 @@ By default this package will attempt to use Matplotlib's functionality for [rend
   <img src="example_plots/conditional_credible_intervals__mu__sigma__colored.png" alt="conditional confidence interval plot, colored" width="350"/>
 
   The markers show the conditional posterior mean.
+
+
+### 2D scatter plots
+
+- Make a 2D scatter plot using data from the hdf5 file `example_data/results_run1.hdf5`, with points ordered and coloured according to different datasets
+  ```terminal
+  python example_2D_scatter_hdf5.py
+  ```
+  The example should give a plot like this:
+  
+  <img src="example_plots/2D_scatter__mu__sigma__sortby_LogLike__colorby_color_data.png" alt="Example 2D scatter plot" width="500"/>
 
 
 ## Utility scripts

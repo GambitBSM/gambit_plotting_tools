@@ -94,6 +94,12 @@ plot_settings = {
     "posterior_max_marker_edgecolor": "black",
     "posterior_max_marker_linewidth": 1.2,
 
+    "scatter_marker": "o",
+    "scatter_marker_size": 6,
+    "scatter_marker_color": "white",
+    "scatter_marker_edgecolor": "black",
+    "scatter_marker_edgewidth": 0.03,
+
     "colorbar_width": "6.25%",
     "colorbar_height": "92.5%",
     "colorbar_loc": "right",

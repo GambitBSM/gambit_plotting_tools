@@ -1186,7 +1186,6 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
 
         for ci_idx, ci_dict in enumerate(x_bin_ci_bounds):
 
-            # _Anders
             if draw_interval_limits:
                 use_color = plot_settings["contour_colors"][ci_idx % len(plot_settings["contour_colors"])]
                 use_linewidth = plot_settings["contour_linewidths"][ci_idx % len(plot_settings["contour_linewidths"])]
@@ -1466,7 +1465,6 @@ def plot_conditional_credible_intervals(
             starts_y_coords = cr_dict["fill_starts_x"]
             ends_y_coords = cr_dict["fill_ends_x"]
 
-            # _Anders
             if draw_interval_limits:
                 use_color = plot_settings["contour_colors"][cr_idx % len(plot_settings["contour_colors"])]
                 use_linewidth = plot_settings["contour_linewidths"][cr_idx % len(plot_settings["contour_linewidths"])]
@@ -1973,6 +1971,132 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
     # Return plot
     return fig, ax, cbar_ax
 
+
+def plot_2D_scatter(x_data: np.ndarray, y_data: np.ndarray, labels: tuple, xy_bounds = None,
+                    sort_data: np.ndarray = None, reverse_sort: bool = False,
+                    color_data: np.ndarray = None, color_label: str = None,
+                    color_bounds = None, 
+                    plot_settings = gambit_plot_settings.plot_settings) -> None:
+
+    # Make local copies
+    x_data = np.copy(x_data)
+    y_data = np.copy(y_data)
+    if sort_data is not None:
+        sort_data = np.copy(sort_data)
+    if color_data is not None:
+        color_data = np.copy(color_data)
+    xy_bounds = deepcopy(xy_bounds) if xy_bounds is not None else None
+
+    # Sanity checks
+    if not (x_data.shape == y_data.shape):
+        raise Exception("Input arrays x_data, y_data must have the same shape.")
+    if sort_data is not None and not (x_data.shape == sort_data.shape):
+        raise Exception("Input array sort_data must have the same shape as x_data and y_data.")
+    if color_data is not None and not (x_data.shape == color_data.shape):
+        raise Exception("Input array color_data must have the same shape as x_data and y_data.")
+
+    if not (len(x_data.shape) == 1 and len(y_data.shape) == 1):
+        raise Exception("Input arrays x_data, y_data must be one-dimensional.")
+    if sort_data is not None and not (len(sort_data.shape) == 1):
+        raise Exception("Input array z_data must be one-dimensional.")
+    if color_data is not None and not (len(color_data.shape) == 1):
+        raise Exception("Input array color_data must be one-dimensional.")
+
+    # Number of points
+    n_pts = x_data.shape[0]
+
+    # Sorting data
+    # If sort_data is provided, sort all data based on sort_data.
+    # If color_data is also provided, it's sorted along with x and y.
+    # If sort_data is not provided, no sorting is done.
+    if sort_data is not None:
+        if reverse_sort:
+            p = np.argsort(sort_data)[::-1] # Descending
+        else:
+            p = np.argsort(sort_data)# Ascending
+        x_data = x_data[p]
+        y_data = y_data[p]
+        sort_data = sort_data[p]
+        if color_data is not None:
+            color_data = color_data[p]
+
+    # Plot bounds in x and y
+    if xy_bounds is None:
+        xy_bounds = ([np.min(x_data), np.max(x_data)], [np.min(y_data), np.max(y_data)])
+    # Add epsilon padding to avoid points landing exactly on the boundary
+    xy_bounds[0][0] -= np.finfo(float).eps
+    xy_bounds[0][1] += np.finfo(float).eps
+    xy_bounds[1][0] -= np.finfo(float).eps
+    xy_bounds[1][1] += np.finfo(float).eps
+    x_min, x_max = xy_bounds[0]
+    y_min, y_max = xy_bounds[1]
+
+    # Color data bounds and label
+    if color_bounds is None:
+        color_bounds = (np.min(color_data), np.max(color_data))
+
+    if color_label is None:
+        color_label = "[Missing label]"
+
+    # Create empty figure
+    fig, ax = create_empty_figure_2D(xy_bounds, plot_settings)
+
+    # Axis labels
+    x_label = labels[0]
+    y_label = labels[1]
+
+    fontsize = plot_settings["fontsize"]
+    plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
+    plt.ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
+
+    # Create a color scale normalization if color data is present
+    norm = None
+    if color_data is not None:
+        norm = matplotlib.cm.colors.Normalize(vmin=color_bounds[0], vmax=color_bounds[1])
+
+    # Make the scatter plot
+    scatter_plot_args = {
+        "s": plot_settings["scatter_marker_size"],
+        "cmap": plot_settings["colormap"],
+        "norm": norm,
+        "rasterized": True,
+        "marker": plot_settings["scatter_marker"],
+        "edgecolors": plot_settings["scatter_marker_edgecolor"],
+        "linewidth": plot_settings["scatter_marker_edgewidth"],
+    }
+    if color_data is not None:
+         scatter_plot_args["c"] = color_data
+    else:
+        scatter_plot_args["color"] = plot_settings["scatter_marker_color"]
+        del scatter_plot_args["cmap"]
+        del scatter_plot_args["norm"]
+
+    im = ax.scatter(x_data, y_data, **scatter_plot_args)
+
+    # Add a colorbar if color data was used
+    cbar_ax = None
+    if color_data is not None:
+        cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"], height=plot_settings["colorbar_height"],
+                             loc=plot_settings["colorbar_loc"], borderpad=plot_settings["colorbar_borderpad"])
+        cbar = fig.colorbar(im, cax=cbar_ax, orientation=plot_settings["colorbar_orientation"])
+
+        cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
+        cbar.outline.set_linewidth(plot_settings["framewidth"])
+
+        if color_bounds is not None:
+            cbar.set_ticks(np.linspace(color_bounds[0], color_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
+            minor_tick_values = np.linspace(color_bounds[0], color_bounds[1], plot_settings["colorbar_n_minor_ticks"])
+            cbar.set_ticks(minor_tick_values[(minor_tick_values >= color_bounds[0]) & (minor_tick_values <= color_bounds[1])], minor=True)
+
+        cbar.ax.tick_params(which="major", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
+        cbar.ax.tick_params(which="minor", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
+
+        cbar.set_label(color_label, fontsize=plot_settings["colorbar_label_fontsize"], labelpad=plot_settings["colorbar_label_pad"], rotation=plot_settings["colorbar_label_rotation"])
+
+    # Return plot
+    return fig, ax, cbar_ax
 
 
 def nearest_neighbor_averaging(hdf5_file_and_group_names, target_dataset, NN_instance, 
