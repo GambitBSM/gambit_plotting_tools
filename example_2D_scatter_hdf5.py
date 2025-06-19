@@ -1,5 +1,6 @@
 from copy import deepcopy
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import os
@@ -26,15 +27,19 @@ datasets = [
 # Now create our main data dictionary by reading the hdf5 files
 data = plot_utils.read_hdf5_datasets([(hdf5_file, group_name)], datasets, filter_invalid_points=True)
 
+# Create a dummy dataset to demonstrate the color_data feature
+data["color_data"] = np.sin(data["mu"] / 4) * np.cos(data["sigma"] / 2)
+
+
 # 
-# Make a 2D profile likelihood plot
+# Make a 2D scatter plot
 # 
 
 # Plot variables
 x_key = "mu"
 y_key = "sigma"
 z_key = "LogLike"
-c_key = "LogLike"
+c_key = "color_data"
 
 # Set some bounds manually?
 dataset_bounds = {
@@ -49,18 +54,20 @@ plot_labels = {
     "mu": r"$\mu$ (unit)",
     "sigma": r"$\sigma$ (unit)",
     "LogLike": r"$\ln L$",
-    "color_data": r"Color data",
+    "color_data": r"$\sin(\mu/4) \cos(\sigma/2)$"
 }
 
 # Load default plot settings (and make adjustments if necessary)
 plot_settings = deepcopy(gambit_plot_settings.plot_settings)
+
+plot_settings["colormap"] = matplotlib.colormaps["plasma"]
 
 plot_settings["facecolor_plot"] = "0.5"
 
 plot_settings["scatter_marker"] = "o"
 plot_settings["scatter_marker_size"] = 6
 plot_settings["scatter_marker_edgecolor"] = "black"
-plot_settings["scatter_marker_edgewidth"] = 0.03
+plot_settings["scatter_marker_edgewidth"] = 0.04
 
 # Discretize colormap?
 n_colors = 20
@@ -87,7 +94,8 @@ fig, ax, cbar_ax = plot_utils.plot_2D_scatter(
     reverse_sort=False,
     color_data=data[c_key],
     color_label=plot_labels[c_key],
-    color_bounds=[np.max(data[c_key])-20, np.max(data[c_key])],
+    # color_bounds=[np.max(data[c_key])-20, np.max(data[c_key])],
+    color_bounds=(-1,1),
     plot_settings=plot_settings
 )
 
@@ -110,7 +118,7 @@ add_header(header_text, ax=ax)
 
 
 # Save to file
-output_path = f"./plots/2D_scatter__{x_key}__{y_key}__sortby_{z_key}__color_{c_key}.pdf"
+output_path = f"./plots/2D_scatter__{x_key}__{y_key}__sortby_{z_key}__colorby_{c_key}.pdf"
 plot_utils.create_folders_if_not_exist(output_path)
 plt.savefig(output_path, dpi=300)
 plt.close()
