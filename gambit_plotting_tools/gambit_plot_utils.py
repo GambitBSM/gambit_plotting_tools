@@ -598,7 +598,7 @@ def bin_and_profile_2D(x_data, y_data, z_data, n_bins, xy_bounds,
 def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray, 
                     x_label: str, n_bins: tuple, x_bounds = None, 
                     confidence_levels = [], y_fill_value = -1*np.finfo(float).max, 
-                    y_is_loglike = True, plot_likelihood_ratio = True,
+                    y_is_loglike = True, plot_likelihood_ratio = True, reverse_sort = False,
                     add_max_likelihood_marker = True, fill_color_below_graph = True, 
                     shaded_confidence_interval_bands=True,
                     plot_settings = gambit_plot_settings.plot_settings,
@@ -620,7 +620,10 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
     n_pts = x_data.shape[0]
 
     # Sort data according to y value, from highest to lowest
-    p = np.argsort(y_data)
+    if reverse_sort:
+        p = np.argsort(-1.0 * y_data)
+    else:
+        p = np.argsort(y_data)
     p = p[::-1]
     x_data = x_data[p]
     y_data = y_data[p]
@@ -803,7 +806,7 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
 def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray, 
                     labels: tuple, n_bins: tuple, xy_bounds = None, z_bounds = None,
                     contour_levels = [], contour_coordinates_output_file = None,
-                    z_is_loglike = True, plot_likelihood_ratio = True,
+                    z_is_loglike = True, plot_likelihood_ratio = True, reverse_sort = False,
                     add_max_likelihood_marker = True,
                     color_data: np.ndarray = None, color_label: str = None, 
                     color_bounds = None, color_z_condition = None,
@@ -835,7 +838,10 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     n_pts = x_data.shape[0]
 
     # Sort data according to z value, from highest to lowest
-    p = np.argsort(z_data)
+    if reverse_sort:
+        p = np.argsort(-1.0 * z_data)
+    else:
+        p = np.argsort(z_data)
     p = p[::-1]
     x_data = x_data[p]
     y_data = y_data[p]
