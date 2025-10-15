@@ -603,7 +603,7 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
                     shaded_confidence_interval_bands=True,
                     plot_settings = gambit_plot_settings.plot_settings,
                     return_plot_details = False,
-                    coordinates_1D_output_file=None) -> None:
+                    graph_coordinates_output_file=None) -> None:
 
     # Make local copies
     x_data = np.copy(x_data)
@@ -656,9 +656,9 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
     if y_is_loglike and plot_likelihood_ratio:
         y_values = np.exp(y_values)
 
-    if coordinates_1D_output_file is not None:
-        np.savetxt(coordinates_1D_output_file, np.column_stack((x_values, y_values)), delimiter=',', header="#x, y", comments="")
-        print(f"Wrote file: {coordinates_1D_output_file}")
+    if graph_coordinates_output_file is not None:
+        np.savetxt(graph_coordinates_output_file, np.column_stack((x_values, y_values)), delimiter=',', header="#x, y", comments="")
+        print(f"Wrote file: {graph_coordinates_output_file}")
 
     # Set y bound
     y_min = np.min(y_values)
