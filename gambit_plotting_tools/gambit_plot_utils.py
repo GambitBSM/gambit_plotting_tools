@@ -148,6 +148,10 @@ def read_hdf5_datasets(hdf5_file_and_group_names, requested_datasets, filter_inv
     for key, dset_info in requested_datasets:
         data[key] = np.array([], dtype=dset_info[1])
 
+    # Initialize additional datasets to identify points with file names
+    for file_name, group_name in hdf5_file_and_group_names:
+        data[file_name] = np.array([], dtype=bool)
+
     # Loop over files and data sets
     for file_name, group_name in hdf5_file_and_group_names:
 
@@ -156,6 +160,7 @@ def read_hdf5_datasets(hdf5_file_and_group_names, requested_datasets, filter_inv
 
         f = h5py.File(file_name, "r")
         group = f[group_name]
+        n_pts = group[requested_datasets[0][1][0]].shape[0]
 
         # for key, dset_info in requested_datasets.items():
         for key, dset_info in requested_datasets:
@@ -164,6 +169,13 @@ def read_hdf5_datasets(hdf5_file_and_group_names, requested_datasets, filter_inv
                 print(f"- Read dataset: {dset_info[0]}")
 
         f.close()
+
+        # Fill the file identification datasets 
+        for other_file_name, _ in hdf5_file_and_group_names:
+            if other_file_name == file_name:
+                data[other_file_name] = np.append(data[other_file_name], np.array([True]*n_pts, dtype=bool))
+            else:
+                data[other_file_name] = np.append(data[other_file_name], np.array([False]*n_pts, dtype=bool))
 
     # Use the "_isvalid" data sets to filter invalid points?
     if filter_invalid_points:
