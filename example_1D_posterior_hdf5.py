@@ -71,6 +71,7 @@ fig, ax = plot_utils.plot_1D_posterior(
     fill_color_below_graph=False,
     shaded_credible_region_bands=True,
     plot_settings=plot_settings,
+    graph_coordinates_output_file=f"./plots/1D_posterior__{x_key}__coordinates.csv"
 )
 
 # Add text
