@@ -602,7 +602,8 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
                     add_max_likelihood_marker = True, fill_color_below_graph = True, 
                     shaded_confidence_interval_bands=True,
                     plot_settings = gambit_plot_settings.plot_settings,
-                    return_plot_details = False) -> None:
+                    return_plot_details = False,
+                    graph_coordinates_output_file=None) -> None:
 
     # Make local copies
     x_data = np.copy(x_data)
@@ -655,6 +656,9 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
     if y_is_loglike and plot_likelihood_ratio:
         y_values = np.exp(y_values)
 
+    if graph_coordinates_output_file is not None:
+        np.savetxt(graph_coordinates_output_file, np.column_stack((x_values, y_values)), delimiter=',', header="#x, y", comments="")
+        print(f"Wrote file: {graph_coordinates_output_file}")
 
     # Set y bound
     y_min = np.min(y_values)
@@ -1602,7 +1606,8 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
                       fill_color_below_graph=False,
                       shaded_credible_region_bands = True,
                       plot_settings = gambit_plot_settings.plot_settings,
-                      return_plot_details = False) -> None:
+                      return_plot_details = False,
+                      graph_coordinates_output_file=None) -> None:
 
     # Make local copies
     x_bounds = deepcopy(x_bounds) if x_bounds is not None else None
@@ -1665,7 +1670,16 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
 
     if fill_color_below_graph:
         plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="stepfilled", color=plot_settings["1D_posterior_color"], alpha=plot_settings["1D_posterior_fill_alpha"])
-    plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="step", color=plot_settings["1D_posterior_color"])
+    hist_vals, bins, _ = plt.hist(x_edges[:-1], n_bins, weights=y_data, histtype="step", color=plot_settings["1D_posterior_color"])
+
+    if graph_coordinates_output_file is not None:
+        # Construct step coords from hist_vals and bins
+        x_coords = np.empty(2 * len(hist_vals))
+        x_coords[0::2] = bins[:-1]
+        x_coords[1::2] = bins[1:]
+        y_coords = np.repeat(hist_vals, 2)
+        np.savetxt(graph_coordinates_output_file, np.column_stack((x_coords, y_coords)), delimiter=',', header="#x, y", comments="")
+        print(f"Wrote file: {graph_coordinates_output_file}")
 
     # Draw credible region lines?
     if len(credible_regions) > 0:

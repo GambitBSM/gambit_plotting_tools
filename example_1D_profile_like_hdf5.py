@@ -71,6 +71,7 @@ fig, ax = plot_utils.plot_1D_profile(
     fill_color_below_graph=False,
     shaded_confidence_interval_bands=True,
     plot_settings=plot_settings,
+    graph_coordinates_output_file=f"./plots/1D_profile__{x_key}__{y_key}__coordinates.csv"
 )
 
 # Add text
