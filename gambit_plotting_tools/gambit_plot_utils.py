@@ -59,6 +59,16 @@ def get_2D_delta_loglike_levels(confidence_levels):
     contour_levels = [-gammaincinv(0.5 * degrees_of_freedom, conf_level) for conf_level in confidence_levels]
     return contour_levels
 
+def get_1D_delta_chi2_levels(confidence_levels):
+    degrees_of_freedom = 1
+    contour_levels = [2 * gammaincinv(0.5 * degrees_of_freedom, conf_level) for conf_level in confidence_levels]
+    return contour_levels
+
+def get_2D_delta_chi2_levels(confidence_levels):
+    degrees_of_freedom = 2
+    contour_levels = [2 * gammaincinv(0.5 * degrees_of_freedom, conf_level) for conf_level in confidence_levels]
+    return contour_levels
+
 
 
 def create_folders_if_not_exist(file_path):
@@ -802,7 +812,219 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
 
     # Return plot
     if return_plot_details:
-        return fig, ax, plot_details         
+        return fig, ax, plot_details
+    else:
+        return fig, ax
+
+
+def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
+                       x_label: str, n_bins: tuple, x_bounds = None,
+                       confidence_levels = [], y_fill_value = np.finfo(float).max,
+                       y_data_is_chi2 = True, reverse_sort = False,
+                       add_best_fit_marker = True, fill_color_below_graph = True,
+                       shaded_confidence_interval_bands=True,
+                       plot_settings = gambit_plot_settings.plot_settings,
+                       return_plot_details = False,
+                       graph_coordinates_output_file=None) -> None:
+
+    # Make local copies
+    x_data = np.copy(x_data)
+    y_data = np.copy(y_data)
+    x_bounds = deepcopy(x_bounds) if x_bounds is not None else None
+
+    # Sanity checks
+    if not (x_data.shape == y_data.shape):
+        raise Exception("All input arrays must have the same shape.")
+
+    if not (len(x_data.shape) == len(y_data.shape) == 1):
+        raise Exception("Input arrays must be one-dimensional.")
+
+    # Number of points
+    n_pts = x_data.shape[0]
+
+    # Convert from log-likelihood to chi^2 if needed
+    if not y_data_is_chi2:
+        y_data = -2.0 * y_data
+
+    # Sort data according to y value, from lowest to highest (lowest chi^2 = best fit)
+    if reverse_sort:
+        p = np.argsort(-1.0 * y_data)
+    else:
+        p = np.argsort(y_data)
+    x_data = x_data[p]
+    y_data = y_data[p]
+
+    # Get the lowest and highest chi^2 values
+    y_min = y_data[0]
+    y_max = y_data[-1]
+
+    # Get plot bounds in x
+    if x_bounds is None:
+        x_bounds = (np.min(x_data), np.max(x_data))
+    x_bounds[0] -= np.finfo(float).eps
+    x_bounds[1] += np.finfo(float).eps
+    x_min, x_max = x_bounds
+
+    # Use delta chi^2 (relative to minimum)
+    y_data = y_data - y_min
+    y_max = y_data[-1]
+    y_min = y_data[0]  # Should be 0.0
+
+    # Bin and profile data (find minimum chi^2 in each bin)
+    # Since we sorted from lowest to highest chi^2, bin_and_profile_1D will
+    # automatically pick the minimum (first encountered) value in each bin
+    x_values, y_values = bin_and_profile_1D(x_data, y_data,
+                                            n_bins, x_bounds,
+                                            already_sorted=True,
+                                            y_fill_value=y_fill_value)
+
+    if graph_coordinates_output_file is not None:
+        np.savetxt(graph_coordinates_output_file, np.column_stack((x_values, y_values)), delimiter=',', header="#x, y", comments="")
+        print(f"Wrote file: {graph_coordinates_output_file}")
+
+    # Set y bound
+    y_min = np.min(y_values)
+    y_max = np.max(y_values)
+    # Set reasonable upper limit for delta chi^2 plot
+    if y_max < 10.0:
+        y_max = 10.0
+    else:
+        y_max = min(y_max * 1.1, 20.0)  # Cap at 20
+    y_min = 0.0
+
+    # Create an empty figure using our plot settings
+    xy_bounds = ([x_min, x_max], [y_min, y_max])
+    fig, ax = create_empty_figure_1D(xy_bounds, plot_settings)
+
+    # Axis labels
+    y_label = r"$\Delta\chi^2$"
+
+    fontsize = plot_settings["fontsize"]
+    plt.xlabel(x_label, fontsize=fontsize, labelpad=plot_settings["xlabel_pad"])
+    plt.ylabel(y_label, fontsize=fontsize, labelpad=plot_settings["ylabel_pad"])
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
+
+    # Determine confidence level lines
+    cl_lines_y_vals = []
+    if len(confidence_levels) > 0:
+        cl_lines_y_vals = get_1D_delta_chi2_levels(confidence_levels)
+
+    plot_details = {}
+    if return_plot_details:
+        plot_details["cl_lines_y_vals"] = cl_lines_y_vals
+
+    # Make a 1D delta chi^2 plot
+
+    # Fill?
+    if fill_color_below_graph:
+        plt.fill_between(
+                x=x_values,
+                y1=y_values,
+                color=plot_settings["1D_profile_likelihood_color"],
+                alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
+                linewidth=0.0)
+
+    main_graph, = plt.plot(x_values, y_values, linestyle="solid", color=plot_settings["1D_profile_likelihood_color"])
+
+    if return_plot_details:
+        plot_details["main_graph"] = main_graph
+
+    # Add shaded confidence interval bands?
+    if shaded_confidence_interval_bands:
+
+        cl_fill_between_coordinates = []
+
+        for cl_line_y_val in cl_lines_y_vals:
+
+            cl_line = matplotlib.lines.Line2D([x_min, x_max], [cl_line_y_val, cl_line_y_val])
+
+            ip_up, ip_dn = get_intersection_points_from_lines(main_graph, cl_line)
+
+            fill_starts_x = [ip[0] for ip in ip_up]
+            fill_ends_x = [ip[0] for ip in ip_dn]
+
+            fill_starts_y = [ip[1] for ip in ip_up]
+            fill_ends_y = [ip[1] for ip in ip_dn]
+
+            # For delta chi^2, we fill where the curve is BELOW the confidence level
+            # This is opposite to likelihood ratio where we fill where curve is ABOVE
+            if y_values[0] < cl_line_y_val:
+                fill_starts_x = [x_min] + fill_starts_x
+                fill_starts_y = [y_values[0]] + fill_starts_y
+
+            if len(fill_starts_x) == len(fill_ends_x) + 1:
+                fill_ends_x = fill_ends_x + [x_max]
+                fill_ends_y = fill_ends_y + [y_values[-1]]
+
+            if len(fill_ends_x) == len(fill_starts_x) + 1:
+                fill_starts_x = [x_min] + fill_starts_x
+                fill_starts_y = [y_values[0]] + fill_starts_y
+
+            if len(fill_starts_x) != len(fill_ends_x):
+                raise Exception("The lists fill_starts_x and fill_ends_x have different lengths. This should not happen.")
+
+            cl_fill_between_coordinates.append({
+                "fill_starts_x": copy(fill_starts_x),
+                "fill_ends_x": copy(fill_ends_x),
+                "fill_starts_y": copy(fill_starts_y),
+                "fill_ends_y": copy(fill_ends_y),
+            })
+
+        plot_details["cl_fill_between_coordinates"] = cl_fill_between_coordinates
+
+        for i in range(len(cl_lines_y_vals)):
+
+            fill_starts_x = cl_fill_between_coordinates[i]["fill_starts_x"]
+            fill_ends_x = cl_fill_between_coordinates[i]["fill_ends_x"]
+            fill_starts_y = cl_fill_between_coordinates[i]["fill_starts_y"]
+            fill_ends_y = cl_fill_between_coordinates[i]["fill_ends_y"]
+
+            for j in range(len(fill_starts_x)):
+
+                x_start, x_end = fill_starts_x[j], fill_ends_x[j]
+                y_start, y_end = fill_starts_y[j], fill_ends_y[j]
+
+                # Build x values including boundaries
+                use_x_values = np.array([x_start] + list(x_values[(x_values > x_start) & (x_values < x_end)]) + [x_end])
+
+                # For y values, interpolate from the curve at boundary points
+                # This ensures we follow the curve, not the CL line level
+                y_at_start = np.interp(x_start, x_values, y_values)
+                y_at_end = np.interp(x_end, x_values, y_values)
+                use_y_values = np.array([y_at_start] + list(y_values[(x_values > x_start) & (x_values < x_end)]) + [y_at_end])
+
+                plt.fill_between(
+                        x=use_x_values,
+                        y1=use_y_values,
+                        y2=y_min,
+                        color=plot_settings["1D_profile_likelihood_color"],
+                        alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
+                    linewidth=0.0)
+
+    # Draw confidence level lines
+    if len(confidence_levels) > 0:
+
+        linewidths = cycle(list(plot_settings["contour_linewidths"]))
+
+        for i,cl in enumerate(confidence_levels):
+            cl_line_y_val = cl_lines_y_vals[i]
+            ax.plot([x_min, x_max], [cl_line_y_val, cl_line_y_val], color=plot_settings["1D_profile_likelihood_color"], linewidth=next(linewidths), linestyle="dashed")
+            cl_text = f"${100*cl:.1f}\\%\\,$CL"
+            ax.text(0.06, cl_line_y_val, cl_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"],
+                    color=plot_settings["1D_profile_likelihood_color"], transform = ax.transAxes)
+
+    # Add a star at the best-fit point (delta chi^2 = 0)
+    if add_best_fit_marker:
+        min_chi2_index = np.argmin(y_data)
+        x_best_fit = x_data[min_chi2_index]
+        ax.scatter(x_best_fit, 0.0, marker=plot_settings["max_likelihood_marker"], s=plot_settings["max_likelihood_marker_size"], c=plot_settings["max_likelihood_marker_color"],
+                   edgecolor=plot_settings["max_likelihood_marker_edgecolor"], linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100, clip_on=False)
+        plot_details["best_fit_coordinate"] = x_best_fit
+
+    # Return plot
+    if return_plot_details:
+        return fig, ax, plot_details
     else:
         return fig, ax
 
