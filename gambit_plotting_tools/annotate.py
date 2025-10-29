@@ -36,7 +36,11 @@ def add_gambit_header(ax=None, version=None, fontsize=plot_settings["header_font
 
 
 def load_small_gambit_logo():
-    im = PIL.Image.open(importlib.resources.path('gambit_plotting_tools', 'gambit_logo_small.png'))
+    # Use context manager to get the actual path to the logo file
+    with importlib.resources.path('gambit_plotting_tools', 'gambit_logo_small.png') as logo_path:
+        im = PIL.Image.open(logo_path)
+        # Load image data into memory before exiting the context
+        im.load()
     im = np.array(im)
     return im
 
