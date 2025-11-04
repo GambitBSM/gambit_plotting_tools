@@ -920,7 +920,7 @@ def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
 
     # High-res interpolation to get the correct coloring with fill_between
     y_interp = interp1d(x_values, y_values, kind='linear')
-    x_values_interp = np.linspace(x_min, x_max, max(x_data.shape[0], 1000))
+    x_values_interp = np.linspace(x_min, x_max, max(x_values.shape[0], 1000))
     y_values_interp = y_interp(x_values_interp)
 
     # Fill?
