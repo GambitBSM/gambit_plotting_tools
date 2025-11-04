@@ -827,6 +827,8 @@ def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
                        return_plot_details = False,
                        graph_coordinates_output_file=None) -> None:
 
+    from scipy.interpolate import interp1d
+
     # Make local copies
     x_data = np.copy(x_data)
     y_data = np.copy(y_data)
@@ -916,15 +918,21 @@ def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
 
     # Make a 1D delta chi^2 plot
 
+    # High-res interpolation to get the correct coloring with fill_between
+    y_interp = interp1d(x_values, y_values, kind='linear')
+    x_values_interp = np.linspace(x_min, x_max, max(x_data.shape[0], 1000))
+    y_values_interp = y_interp(x_values_interp)
+
     # Fill?
     if fill_color_below_graph:
         plt.fill_between(
-                x=x_values,
-                y1=y_values,
+                x=x_values_interp,
+                y1=y_values_interp,
                 color=plot_settings["1D_profile_likelihood_color"],
                 alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
                 linewidth=0.0)
 
+    # Plot main graph
     main_graph, = plt.plot(x_values, y_values, linestyle="solid", color=plot_settings["1D_profile_likelihood_color"])
 
     if return_plot_details:
@@ -932,74 +940,15 @@ def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
 
     # Add shaded confidence interval bands?
     if shaded_confidence_interval_bands:
-
-        cl_fill_between_coordinates = []
-
         for cl_line_y_val in cl_lines_y_vals:
-
-            cl_line = matplotlib.lines.Line2D([x_min, x_max], [cl_line_y_val, cl_line_y_val])
-
-            ip_up, ip_dn = get_intersection_points_from_lines(main_graph, cl_line)
-
-            fill_starts_x = [ip[0] for ip in ip_up]
-            fill_ends_x = [ip[0] for ip in ip_dn]
-
-            fill_starts_y = [ip[1] for ip in ip_up]
-            fill_ends_y = [ip[1] for ip in ip_dn]
-
-            # For delta chi^2, we fill where the curve is BELOW the confidence level
-            # This is opposite to likelihood ratio where we fill where curve is ABOVE
-            if y_values[0] < cl_line_y_val:
-                fill_starts_x = [x_min] + fill_starts_x
-                fill_starts_y = [y_values[0]] + fill_starts_y
-
-            if len(fill_starts_x) == len(fill_ends_x) + 1:
-                fill_ends_x = fill_ends_x + [x_max]
-                fill_ends_y = fill_ends_y + [y_values[-1]]
-
-            if len(fill_ends_x) == len(fill_starts_x) + 1:
-                fill_starts_x = [x_min] + fill_starts_x
-                fill_starts_y = [y_values[0]] + fill_starts_y
-
-            if len(fill_starts_x) != len(fill_ends_x):
-                raise Exception("The lists fill_starts_x and fill_ends_x have different lengths. This should not happen.")
-
-            cl_fill_between_coordinates.append({
-                "fill_starts_x": copy(fill_starts_x),
-                "fill_ends_x": copy(fill_ends_x),
-                "fill_starts_y": copy(fill_starts_y),
-                "fill_ends_y": copy(fill_ends_y),
-            })
-
-        plot_details["cl_fill_between_coordinates"] = cl_fill_between_coordinates
-
-        for i in range(len(cl_lines_y_vals)):
-
-            fill_starts_x = cl_fill_between_coordinates[i]["fill_starts_x"]
-            fill_ends_x = cl_fill_between_coordinates[i]["fill_ends_x"]
-            fill_starts_y = cl_fill_between_coordinates[i]["fill_starts_y"]
-            fill_ends_y = cl_fill_between_coordinates[i]["fill_ends_y"]
-
-            for j in range(len(fill_starts_x)):
-
-                x_start, x_end = fill_starts_x[j], fill_ends_x[j]
-                y_start, y_end = fill_starts_y[j], fill_ends_y[j]
-
-                # Build x values including boundaries
-                use_x_values = np.array([x_start] + list(x_values[(x_values > x_start) & (x_values < x_end)]) + [x_end])
-
-                # For y values, interpolate from the curve at boundary points
-                # This ensures we follow the curve, not the CL line level
-                y_at_start = np.interp(x_start, x_values, y_values)
-                y_at_end = np.interp(x_end, x_values, y_values)
-                use_y_values = np.array([y_at_start] + list(y_values[(x_values > x_start) & (x_values < x_end)]) + [y_at_end])
-
-                plt.fill_between(
-                        x=use_x_values,
-                        y1=use_y_values,
-                        y2=y_min,
-                        color=plot_settings["1D_profile_likelihood_color"],
-                        alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
+            plt.fill_between(
+                    x=x_values_interp,
+                    y1=y_values_interp,
+                    y2=y_min,
+                    where=(y_values_interp < cl_line_y_val),
+                    color=plot_settings["1D_profile_likelihood_color"],
+                    alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
+                    interpolate=True,
                     linewidth=0.0)
 
     # Draw confidence level lines
@@ -1011,8 +960,8 @@ def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
             cl_line_y_val = cl_lines_y_vals[i]
             ax.plot([x_min, x_max], [cl_line_y_val, cl_line_y_val], color=plot_settings["1D_profile_likelihood_color"], linewidth=next(linewidths), linestyle="dashed")
             cl_text = f"${100*cl:.1f}\\%\\,$CL"
-            ax.text(0.06, cl_line_y_val, cl_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"],
-                    color=plot_settings["1D_profile_likelihood_color"], transform = ax.transAxes)
+            ax.text(x_min + 0.06*(x_max - x_min), cl_line_y_val, cl_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"],
+                    color=plot_settings["1D_profile_likelihood_color"])
 
     # Add a star at the best-fit point (delta chi^2 = 0)
     if add_best_fit_marker:

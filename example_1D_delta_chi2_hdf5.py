@@ -31,6 +31,7 @@ data["chi2"] = -2 * data["LogLike"]
 #
 
 confidence_levels = [0.683, 0.954]
+# confidence_levels = [0.954]
 
 # Plot variables
 x_key = "sigma"
