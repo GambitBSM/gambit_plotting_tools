@@ -336,7 +336,7 @@ def create_empty_figure_1D(xy_bounds, plot_settings, use_facecolor=None):
     plt.tick_params(which="major", axis="y",direction="in", color=major_ticks_color, width=major_ticks_width, length=major_ticks_length, pad=major_ticks_pad, left=major_ticks_left, right=major_ticks_right)
     plt.tick_params(which="minor", axis="y",direction="in", color=minor_ticks_color, width=minor_ticks_width, length=minor_ticks_length,  pad=minor_ticks_pad, left=minor_ticks_left, right=minor_ticks_right)
 
-    plt.ticklabel_format(axis="both", style="sci", scilimits=(-3,3))
+    plt.ticklabel_format(axis="both", style="sci", scilimits=plot_settings["tick_label_sci_limits"])
 
     ax.xaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
     ax.yaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
@@ -410,7 +410,7 @@ def create_empty_figure_2D(xy_bounds, plot_settings, use_facecolor=None):
     plt.tick_params(which="major", axis="y",direction="in", color=major_ticks_color, width=major_ticks_width, length=major_ticks_length, pad=major_ticks_pad, left=major_ticks_left, right=major_ticks_right)
     plt.tick_params(which="minor", axis="y",direction="in", color=minor_ticks_color, width=minor_ticks_width, length=minor_ticks_length,  pad=minor_ticks_pad, left=minor_ticks_left, right=minor_ticks_right)
 
-    plt.ticklabel_format(axis="both", style="sci", scilimits=(-3,3))
+    plt.ticklabel_format(axis="both", style="sci", scilimits=plot_settings["tick_label_sci_limits"])
 
     ax.xaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
     ax.yaxis.get_offset_text().set_fontsize(plot_settings["fontsize"])
@@ -719,9 +719,9 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
                 y1=y_values, 
                 color=plot_settings["1D_profile_likelihood_color"],
                 alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
-                linewidth=0.0)
+                linewidth=plot_settings["fill_linewidth"])
 
-    main_graph, = plt.plot(x_values, y_values, linestyle="solid", color=plot_settings["1D_profile_likelihood_color"])
+    main_graph, = plt.plot(x_values, y_values, linestyle=plot_settings["profile_linestyle"], color=plot_settings["1D_profile_likelihood_color"])
 
     if return_plot_details:
         plot_details["main_graph"] = main_graph
@@ -788,7 +788,7 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
                         y2=y_min,
                         color=plot_settings["1D_profile_likelihood_color"],
                         alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
-                    linewidth=0.0)
+                    linewidth=plot_settings["fill_linewidth"])
 
     # Draw confidence level lines
     if len(confidence_levels) > 0:
@@ -797,10 +797,10 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
 
         for i,cl in enumerate(confidence_levels):
             cl_line_y_val = cl_lines_y_vals[i]
-            ax.plot([x_min, x_max], [cl_line_y_val, cl_line_y_val], color=plot_settings["1D_profile_likelihood_color"], linewidth=next(linewidths), linestyle="dashed")
+            ax.plot([x_min, x_max], [cl_line_y_val, cl_line_y_val], color=plot_settings["1D_profile_likelihood_color"], linewidth=next(linewidths), linestyle=plot_settings["confidence_level_linestyle"])
             cl_text = f"${100*cl:.1f}\\%\\,$CL"
-            ax.text(0.06, cl_line_y_val, cl_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"], 
-                    color=plot_settings["1D_profile_likelihood_color"], transform = ax.transAxes)
+            ax.text(plot_settings["cl_label_x_offset"], cl_line_y_val, cl_text, ha=plot_settings["cl_label_ha"], va=plot_settings["cl_label_va"], fontsize=plot_settings["header_fontsize"],
+                    color=plot_settings["1D_profile_likelihood_color"], transform=ax.transAxes)
 
     # Add a star at the max-likelihood point
     if (y_is_loglike and add_max_likelihood_marker):
@@ -930,10 +930,10 @@ def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
                 y1=y_values_interp,
                 color=plot_settings["1D_profile_likelihood_color"],
                 alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
-                linewidth=0.0)
+                linewidth=plot_settings["fill_linewidth"])
 
     # Plot main graph
-    main_graph, = plt.plot(x_values, y_values, linestyle="solid", color=plot_settings["1D_profile_likelihood_color"])
+    main_graph, = plt.plot(x_values, y_values, linestyle=plot_settings["profile_linestyle"], color=plot_settings["1D_profile_likelihood_color"])
 
     if return_plot_details:
         plot_details["main_graph"] = main_graph
@@ -949,7 +949,7 @@ def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
                     color=plot_settings["1D_profile_likelihood_color"],
                     alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
                     interpolate=True,
-                    linewidth=0.0)
+                    linewidth=plot_settings["fill_linewidth"])
 
     # Draw confidence level lines
     if len(confidence_levels) > 0:
@@ -958,10 +958,10 @@ def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
 
         for i,cl in enumerate(confidence_levels):
             cl_line_y_val = cl_lines_y_vals[i]
-            ax.plot([x_min, x_max], [cl_line_y_val, cl_line_y_val], color=plot_settings["1D_profile_likelihood_color"], linewidth=next(linewidths), linestyle="dashed")
+            ax.plot([x_min, x_max], [cl_line_y_val, cl_line_y_val], color=plot_settings["1D_profile_likelihood_color"], linewidth=next(linewidths), linestyle=plot_settings["confidence_level_linestyle"])
             cl_text = f"${100*cl:.1f}\\%\\,$CL"
-            ax.text(x_min + 0.06*(x_max - x_min), cl_line_y_val, cl_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"],
-                    color=plot_settings["1D_profile_likelihood_color"])
+            ax.text(plot_settings["cl_label_x_offset"], cl_line_y_val, cl_text, ha=plot_settings["cl_label_ha"], va=plot_settings["cl_label_va"], fontsize=plot_settings["header_fontsize"],
+                    color=plot_settings["1D_profile_likelihood_color"], transform=ax.transAxes)
 
     # Add a star at the best-fit point (delta chi^2 = 0)
     if add_best_fit_marker:
@@ -1189,8 +1189,8 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
         minor_tick_values = np.linspace(color_plot_bounds[0], color_plot_bounds[1], plot_settings["colorbar_n_minor_ticks"])
         cbar.set_ticks(minor_tick_values[(minor_tick_values >= color_plot_bounds[0]) & (minor_tick_values <= color_plot_bounds[1])], minor=True)
 
-    cbar.ax.tick_params(which="major", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
-    cbar.ax.tick_params(which="minor", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
+    cbar.ax.tick_params(which="major", labelsize=fontsize - plot_settings["colorbar_tick_label_fontsize_offset"], direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
+    cbar.ax.tick_params(which="minor", labelsize=fontsize - plot_settings["colorbar_tick_label_fontsize_offset"], direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
 
     # Determine colorbar label
     cbar_label = ""
@@ -1397,7 +1397,7 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
                         y2=[end, end], 
                         color=plot_settings["1D_profile_likelihood_color"],
                         alpha=plot_settings["1D_profile_likelihood_fill_alpha"],
-                        linewidth=0.0,
+                        linewidth=plot_settings["fill_linewidth"],
                         zorder=0,
                     )
 
@@ -1436,7 +1436,7 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
                 [current_x_min, current_x_min], [y_min, y_max], 
                 color=plot_settings["separator_color"],
                 linewidth=plot_settings["separator_linewidth"],
-                linestyle="solid",
+                linestyle=plot_settings["separator_linestyle"],
                 zorder=1,
             )
 
@@ -1683,7 +1683,7 @@ def plot_conditional_credible_intervals(
                         y2=[end_y, end_y],
                         color=plot_settings["1D_posterior_color"],
                         alpha=plot_settings["1D_posterior_fill_alpha"],
-                        linewidth=0.0,
+                        linewidth=plot_settings["fill_linewidth"],
                         zorder=0,
                     )
 
@@ -1737,7 +1737,7 @@ def plot_conditional_credible_intervals(
                 [current_x_min, current_x_min], [y_min, y_max],
                 color=plot_settings["separator_color"],
                 linewidth=plot_settings["separator_linewidth"],
-                linestyle="solid",
+                linestyle=plot_settings["separator_linestyle"],
                 zorder=1,
             )
 
@@ -1899,10 +1899,10 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
             if return_plot_details:
                 plot_details["cl_lines_y_vals"].append(line_y_val)
 
-            ax.plot([x_min, x_max], [line_y_val, line_y_val], color=plot_settings["1D_posterior_color"], linewidth=next(linewidths), linestyle="dashed")
+            ax.plot([x_min, x_max], [line_y_val, line_y_val], color=plot_settings["1D_posterior_color"], linewidth=next(linewidths), linestyle=plot_settings["credible_region_linestyle"])
             cr_text = f"${100*cr:.1f}\\%\\,$CR"
-            ax.text(0.06, line_y_val, cr_text, ha="left", va="bottom", fontsize=plot_settings["header_fontsize"], 
-                    color=plot_settings["1D_posterior_color"], transform = ax.transAxes)
+            ax.text(plot_settings["cl_label_x_offset"], line_y_val, cr_text, ha=plot_settings["cl_label_ha"], va=plot_settings["cl_label_va"], fontsize=plot_settings["header_fontsize"],
+                    color=plot_settings["1D_posterior_color"], transform=ax.transAxes)
 
             if shaded_credible_region_bands:
                 new_y_data_shaded = deepcopy(y_data) # Use a different variable name to avoid confusion
@@ -2171,8 +2171,8 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
         minor_tick_values = np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_minor_ticks"])
         cbar.set_ticks(minor_tick_values[(minor_tick_values >= cmap_vmin) & (minor_tick_values <= cmap_vmax)], minor=True)
 
-    cbar.ax.tick_params(which="major", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
-    cbar.ax.tick_params(which="minor", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
+    cbar.ax.tick_params(which="major", labelsize=fontsize - plot_settings["colorbar_tick_label_fontsize_offset"], direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
+    cbar.ax.tick_params(which="minor", labelsize=fontsize - plot_settings["colorbar_tick_label_fontsize_offset"], direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
 
     # Colorbar label for color_data
     cbar_label_str = ""
@@ -2323,8 +2323,8 @@ def plot_2D_scatter(x_data: np.ndarray, y_data: np.ndarray, labels: tuple, xy_bo
             minor_tick_values = np.linspace(color_bounds[0], color_bounds[1], plot_settings["colorbar_n_minor_ticks"])
             cbar.set_ticks(minor_tick_values[(minor_tick_values >= color_bounds[0]) & (minor_tick_values <= color_bounds[1])], minor=True)
 
-        cbar.ax.tick_params(which="major", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
-        cbar.ax.tick_params(which="minor", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
+        cbar.ax.tick_params(which="major", labelsize=fontsize - plot_settings["colorbar_tick_label_fontsize_offset"], direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
+        cbar.ax.tick_params(which="minor", labelsize=fontsize - plot_settings["colorbar_tick_label_fontsize_offset"], direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
 
         cbar.set_label(color_label, fontsize=plot_settings["colorbar_label_fontsize"], labelpad=plot_settings["colorbar_label_pad"], rotation=plot_settings["colorbar_label_rotation"])
 
