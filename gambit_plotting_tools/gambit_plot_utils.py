@@ -986,6 +986,7 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
                     color_data: np.ndarray = None, color_label: str = None, 
                     color_bounds = None, color_z_condition = None,
                     missing_value_color= None,
+                    log_scale_colorbar: bool = False,
                     plot_settings = gambit_plot_settings.plot_settings) -> None:
 
     # Make local copies
@@ -1104,7 +1105,10 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     plt.yticks(fontsize=fontsize)
 
     # Create a color scale normalization using the determined bounds
-    norm = matplotlib.cm.colors.Normalize(vmin=color_plot_bounds[0], vmax=color_plot_bounds[1])
+    if log_scale_colorbar:
+        norm = mcolors.LogNorm(vmin=color_plot_bounds[0], vmax=color_plot_bounds[1])
+    else:
+        norm = mcolors.Normalize(vmin=color_plot_bounds[0], vmax=color_plot_bounds[1])
 
     # Reshape data for plotting
     n_xbins = n_bins[0]
@@ -1177,9 +1181,13 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
     cbar.outline.set_linewidth(plot_settings["framewidth"])
 
-    cbar.set_ticks(np.linspace(color_plot_bounds[0], color_plot_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
-    minor_tick_values = np.linspace(color_plot_bounds[0], color_plot_bounds[1], plot_settings["colorbar_n_minor_ticks"])
-    cbar.set_ticks(minor_tick_values[(minor_tick_values >= color_plot_bounds[0]) & (minor_tick_values <= color_plot_bounds[1])], minor=True)
+    if log_scale_colorbar:
+        cbar.locator = matplotlib.ticker.LogLocator()
+        cbar.update_ticks()
+    else:
+        cbar.set_ticks(np.linspace(color_plot_bounds[0], color_plot_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
+        minor_tick_values = np.linspace(color_plot_bounds[0], color_plot_bounds[1], plot_settings["colorbar_n_minor_ticks"])
+        cbar.set_ticks(minor_tick_values[(minor_tick_values >= color_plot_bounds[0]) & (minor_tick_values <= color_plot_bounds[1])], minor=True)
 
     cbar.ax.tick_params(which="major", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
     cbar.ax.tick_params(which="minor", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
@@ -1213,7 +1221,8 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
                                        add_max_likelihood_marker=True,
                                        shaded_confidence_interval_bands=False,
                                        x_condition="bin",
-                                       missing_value_color = None, 
+                                       missing_value_color = None,
+                                       log_scale_colorbar: bool = False,
                                        plot_settings=gambit_plot_settings.plot_settings):
 
     # Make local copies
@@ -1345,7 +1354,10 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
     if not shaded_confidence_interval_bands:
 
         # Create color normalization
-        norm = matplotlib.cm.colors.Normalize(vmin=z_bounds[0], vmax=z_bounds[1])
+        if log_scale_colorbar:
+            norm = mcolors.LogNorm(vmin=z_bounds[0], vmax=z_bounds[1])
+        else:
+            norm = mcolors.Normalize(vmin=z_bounds[0], vmax=z_bounds[1])
 
         im = ax.imshow(
             Z_values_2D,
@@ -1451,9 +1463,13 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
         cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
         cbar.outline.set_linewidth(plot_settings["framewidth"])
 
-        cbar.set_ticks(np.linspace(z_bounds[0], z_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
-        minor_tick_values = np.linspace(z_bounds[0], z_bounds[1], plot_settings["colorbar_n_minor_ticks"])
-        cbar.set_ticks(minor_tick_values[(minor_tick_values >= z_bounds[0]) & (minor_tick_values <= z_bounds[1])], minor=True)
+        if log_scale_colorbar:
+            cbar.locator = matplotlib.ticker.LogLocator()
+            cbar.update_ticks()
+        else:
+            cbar.set_ticks(np.linspace(z_bounds[0], z_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
+            minor_tick_values = np.linspace(z_bounds[0], z_bounds[1], plot_settings["colorbar_n_minor_ticks"])
+            cbar.set_ticks(minor_tick_values[(minor_tick_values >= z_bounds[0]) & (minor_tick_values <= z_bounds[1])], minor=True)
 
         cbar.ax.tick_params(which="major", labelsize=fontsize - 3, direction="in",
                             color=plot_settings["colorbar_major_ticks_color"],
@@ -1496,6 +1512,7 @@ def plot_conditional_credible_intervals(
     shaded_credible_region_bands=False,
     x_condition="bin",
     missing_value_color=None,
+    log_scale_colorbar: bool = False,
     plot_settings=gambit_plot_settings.plot_settings):
 
     # Make local copies
@@ -1620,7 +1637,10 @@ def plot_conditional_credible_intervals(
 
         # Create color normalization for posterior
         posterior_prob_bounds = (0.0, 1.0) # Relative probability
-        norm = matplotlib.cm.colors.Normalize(vmin=posterior_prob_bounds[0], vmax=posterior_prob_bounds[1])
+        if log_scale_colorbar:
+            norm = mcolors.LogNorm(vmin=posterior_prob_bounds[0], vmax=posterior_prob_bounds[1])
+        else:
+            norm = mcolors.Normalize(vmin=posterior_prob_bounds[0], vmax=posterior_prob_bounds[1])
 
         im = ax.imshow(
             Z_values_2D,
@@ -1743,9 +1763,13 @@ def plot_conditional_credible_intervals(
         cbar.outline.set_linewidth(plot_settings["framewidth"])
 
         # Use posterior_prob_bounds for ticks
-        cbar.set_ticks(np.linspace(posterior_prob_bounds[0], posterior_prob_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
-        minor_tick_values = np.linspace(posterior_prob_bounds[0], posterior_prob_bounds[1], plot_settings["colorbar_n_minor_ticks"])
-        cbar.set_ticks(minor_tick_values[(minor_tick_values >= posterior_prob_bounds[0]) & (minor_tick_values <= posterior_prob_bounds[1])], minor=True)
+        if log_scale_colorbar:
+            cbar.locator = matplotlib.ticker.LogLocator()
+            cbar.update_ticks()
+        else:
+            cbar.set_ticks(np.linspace(posterior_prob_bounds[0], posterior_prob_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
+            minor_tick_values = np.linspace(posterior_prob_bounds[0], posterior_prob_bounds[1], plot_settings["colorbar_n_minor_ticks"])
+            cbar.set_ticks(minor_tick_values[(minor_tick_values >= posterior_prob_bounds[0]) & (minor_tick_values <= posterior_prob_bounds[1])], minor=True)
 
         cbar.ax.tick_params(which="major", labelsize=fontsize - 3, direction="in",
                             color=plot_settings["colorbar_major_ticks_color"],
@@ -1949,6 +1973,7 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
                       color_bounds = None,
                       color_within_credible_region = None,
                       missing_value_color = None,
+                      log_scale_colorbar: bool = False,
                       plot_settings = gambit_plot_settings.plot_settings) -> None:
 
     # Make local copies
@@ -2000,6 +2025,9 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
         cmap_vmax = np.max(histogram)
         if plot_relative_probability:
             cmap_vmax = 1.0
+        if log_scale_colorbar:
+            nonzero_vals = histogram[histogram > 0]
+            cmap_vmin = (np.min(nonzero_vals) / np.max(histogram)) if plot_relative_probability else np.min(nonzero_vals)
 
     # Logic for calculating color_values_for_bins, if color_data is not None
     if color_data is not None:
@@ -2086,7 +2114,10 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
     plt.yticks(fontsize=fontsize)
 
     # Create a color scale normalization
-    norm = matplotlib.cm.colors.Normalize(vmin=cmap_vmin, vmax=cmap_vmax)
+    if log_scale_colorbar:
+        norm = mcolors.LogNorm(vmin=cmap_vmin, vmax=cmap_vmax)
+    else:
+        norm = mcolors.Normalize(vmin=cmap_vmin, vmax=cmap_vmax)
 
     # Make a color plot of the 2D posterior distribution
     X, Y = np.meshgrid(x_centers, y_centers)
@@ -2131,10 +2162,14 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
     cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
     cbar.outline.set_linewidth(plot_settings["framewidth"])
 
-    cbar.set_ticks(np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_major_ticks"]), minor=False)
-    # Ensure minor ticks are within the bounds
-    minor_tick_values = np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_minor_ticks"])
-    cbar.set_ticks(minor_tick_values[(minor_tick_values >= cmap_vmin) & (minor_tick_values <= cmap_vmax)], minor=True)
+    if log_scale_colorbar:
+        cbar.locator = matplotlib.ticker.LogLocator()
+        cbar.update_ticks()
+    else:
+        cbar.set_ticks(np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_major_ticks"]), minor=False)
+        # Ensure minor ticks are within the bounds
+        minor_tick_values = np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_minor_ticks"])
+        cbar.set_ticks(minor_tick_values[(minor_tick_values >= cmap_vmin) & (minor_tick_values <= cmap_vmax)], minor=True)
 
     cbar.ax.tick_params(which="major", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
     cbar.ax.tick_params(which="minor", labelsize=fontsize-3, direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
@@ -2166,7 +2201,8 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
 def plot_2D_scatter(x_data: np.ndarray, y_data: np.ndarray, labels: tuple, xy_bounds = None,
                     sort_data: np.ndarray = None, reverse_sort: bool = False,
                     color_data: np.ndarray = None, color_label: str = None,
-                    color_bounds = None, 
+                    color_bounds = None,
+                    log_scale_colorbar: bool = False,
                     plot_settings = gambit_plot_settings.plot_settings) -> None:
 
     # Make local copies
@@ -2245,7 +2281,10 @@ def plot_2D_scatter(x_data: np.ndarray, y_data: np.ndarray, labels: tuple, xy_bo
     # Create a color scale normalization if color data is present
     norm = None
     if color_data is not None:
-        norm = matplotlib.cm.colors.Normalize(vmin=color_bounds[0], vmax=color_bounds[1])
+        if log_scale_colorbar:
+            norm = mcolors.LogNorm(vmin=color_bounds[0], vmax=color_bounds[1])
+        else:
+            norm = mcolors.Normalize(vmin=color_bounds[0], vmax=color_bounds[1])
 
     # Make the scatter plot
     scatter_plot_args = {
@@ -2276,7 +2315,10 @@ def plot_2D_scatter(x_data: np.ndarray, y_data: np.ndarray, labels: tuple, xy_bo
         cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
         cbar.outline.set_linewidth(plot_settings["framewidth"])
 
-        if color_bounds is not None:
+        if log_scale_colorbar:
+            cbar.locator = matplotlib.ticker.LogLocator()
+            cbar.update_ticks()
+        elif color_bounds is not None:
             cbar.set_ticks(np.linspace(color_bounds[0], color_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
             minor_tick_values = np.linspace(color_bounds[0], color_bounds[1], plot_settings["colorbar_n_minor_ticks"])
             cbar.set_ticks(minor_tick_values[(minor_tick_values >= color_bounds[0]) & (minor_tick_values <= color_bounds[1])], minor=True)
