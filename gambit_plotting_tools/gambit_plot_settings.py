@@ -71,6 +71,7 @@ plot_settings = {
 
     "separator_linewidth": 1.2,
     "separator_color": "black",
+    "separator_linestyle": "solid",
 
     "connector_linewidth": 1.0,
     "connector_color": "white",
@@ -122,6 +123,19 @@ plot_settings = {
 
     "colorbar_n_major_ticks": 6,
     "colorbar_n_minor_ticks": 21,
+    "colorbar_tick_label_fontsize_offset": 3,
+
+    "tick_label_sci_limits": (-3, 3),
+
+    "profile_linestyle": "solid",
+    "confidence_level_linestyle": "dashed",
+    "credible_region_linestyle": "dashed",
+
+    "fill_linewidth": 0.0,
+
+    "cl_label_x_offset": 0.06,
+    "cl_label_ha": "left",
+    "cl_label_va": "bottom",
 
     "header_fontsize": 7,
     "header_pad": 2,
