@@ -21,6 +21,93 @@ _FLOAT_MAX = np.finfo(float).max
 _FLOAT_EPS = np.finfo(float).eps
 
 
+def _expand_2D_bounds(xy_bounds):
+    """Expand 2D plot bounds by machine epsilon on all sides to avoid edge effects."""
+    xy_bounds[0][0] -= _FLOAT_EPS
+    xy_bounds[0][1] += _FLOAT_EPS
+    xy_bounds[1][0] -= _FLOAT_EPS
+    xy_bounds[1][1] += _FLOAT_EPS
+
+
+def _draw_threshold_lines(ax, x_min, x_max, levels, threshold_y_vals, color, label_suffix, plot_settings):
+    """Draw horizontal threshold lines (CL or CR) with text labels on a 1D plot."""
+    linewidths = cycle(list(plot_settings["contour_linewidths"]))
+    for level, y_val in zip(levels, threshold_y_vals):
+        ax.plot([x_min, x_max], [y_val, y_val], color=color,
+                linewidth=next(linewidths),
+                linestyle=plot_settings["confidence_level_linestyle"])
+        label_text = f"${100 * level:.1f}\\%\\,${label_suffix}"
+        ax.text(plot_settings["cl_label_x_offset"], y_val, label_text,
+                ha=plot_settings["cl_label_ha"], va=plot_settings["cl_label_va"],
+                fontsize=plot_settings["header_fontsize"], color=color,
+                transform=ax.transAxes)
+
+
+def _setup_colorbar(fig, ax, im, color_bounds, log_scale_colorbar, cbar_label, fontsize, plot_settings):
+    """Create and configure a colorbar, returning (cbar_ax, cbar)."""
+    cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"],
+                         height=plot_settings["colorbar_height"],
+                         loc=plot_settings["colorbar_loc"],
+                         borderpad=plot_settings["colorbar_borderpad"])
+    cbar = fig.colorbar(im, cax=cbar_ax, orientation=plot_settings["colorbar_orientation"])
+    cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
+    cbar.outline.set_linewidth(plot_settings["framewidth"])
+
+    if log_scale_colorbar:
+        cbar.locator = matplotlib.ticker.LogLocator()
+        cbar.update_ticks()
+    elif color_bounds is not None:
+        cbar.set_ticks(np.linspace(color_bounds[0], color_bounds[1],
+                                   plot_settings["colorbar_n_major_ticks"]), minor=False)
+        minor_tick_values = np.linspace(color_bounds[0], color_bounds[1],
+                                        plot_settings["colorbar_n_minor_ticks"])
+        cbar.set_ticks(minor_tick_values[(minor_tick_values >= color_bounds[0]) &
+                                         (minor_tick_values <= color_bounds[1])], minor=True)
+
+    offset = plot_settings["colorbar_tick_label_fontsize_offset"]
+    cbar.ax.tick_params(which="major", labelsize=fontsize - offset, direction="in",
+                        color=plot_settings["colorbar_major_ticks_color"],
+                        width=plot_settings["colorbar_major_ticks_width"],
+                        length=plot_settings["colorbar_major_ticks_length"],
+                        pad=plot_settings["colorbar_major_ticks_pad"])
+    cbar.ax.tick_params(which="minor", labelsize=fontsize - offset, direction="in",
+                        color=plot_settings["colorbar_minor_ticks_color"],
+                        width=plot_settings["colorbar_minor_ticks_width"],
+                        length=plot_settings["colorbar_minor_ticks_length"],
+                        pad=plot_settings["colorbar_minor_ticks_pad"])
+
+    cbar.set_label(cbar_label, fontsize=plot_settings["colorbar_label_fontsize"],
+                   labelpad=plot_settings["colorbar_label_pad"],
+                   rotation=plot_settings["colorbar_label_rotation"])
+    return cbar_ax, cbar
+
+
+def _plot_marker(ax, x, y, marker_prefix, plot_settings, **kwargs):
+    """Scatter a single styled marker using settings keys prefixed by marker_prefix."""
+    ax.scatter(x, y,
+               marker=plot_settings[f"{marker_prefix}_marker"],
+               s=plot_settings[f"{marker_prefix}_marker_size"],
+               c=plot_settings[f"{marker_prefix}_marker_color"],
+               edgecolor=plot_settings[f"{marker_prefix}_marker_edgecolor"],
+               linewidth=plot_settings[f"{marker_prefix}_marker_linewidth"],
+               zorder=100, clip_on=False, **kwargs)
+
+
+def _x_condition_mask(x_data, x_bin_limits, i, n_x_bins, x_condition):
+    """Return a boolean mask selecting data for the i-th x bin under the given x_condition."""
+    current_x_min = x_bin_limits[i]
+    current_x_max = x_bin_limits[i + 1]
+    if x_condition == "bin":
+        if i == n_x_bins - 1:  # include right edge in last bin
+            return (x_data >= current_x_min) & (x_data <= current_x_max)
+        else:
+            return (x_data >= current_x_min) & (x_data < current_x_max)
+    elif x_condition == "upperbound":
+        return x_data <= current_x_max
+    else:  # "lowerbound"
+        return x_data >= current_x_min
+
+
 # Check if LaTeX rendering is supported by looking for the commands 'latex', 'dvipng' and 'gs'
 tex_required_tools = ("latex", "dvipng", "gs")
 tex_support_detected = all(shutil.which(cmd) for cmd in tex_required_tools)
@@ -167,15 +254,13 @@ def read_hdf5_datasets(hdf5_file_and_group_names, requested_datasets, filter_inv
         if verbose:
             print(f"Reading file: {file_name}")
 
-        f = h5py.File(file_name, "r")
-        group = f[group_name]
+        with h5py.File(file_name, "r") as f:
+            group = f[group_name]
 
-        for key, dset_info in requested_datasets:
-            chunks[key].append(np.array(group[dset_info[0]], dtype=dset_info[1]))
-            if verbose:
-                print(f"- Read dataset: {dset_info[0]}")
-
-        f.close()
+            for key, dset_info in requested_datasets:
+                chunks[key].append(np.array(group[dset_info[0]], dtype=dset_info[1]))
+                if verbose:
+                    print(f"- Read dataset: {dset_info[0]}")
 
     # Concatenate all chunks at once (avoids O(N*M) repeated allocation from np.append)
     data = OrderedDict()
@@ -286,7 +371,6 @@ def create_empty_figure_1D(xy_bounds, plot_settings, use_facecolor=None):
 
     figwidth = plot_settings["figwidth"]
     figheight = plot_settings["figheight"]
-    figheight_figwidth_ratio = figheight / figwidth
     fig = plt.figure(figsize=(figwidth, figheight))
 
     pad_left = plot_settings["pad_left_1D"]
@@ -360,7 +444,6 @@ def create_empty_figure_2D(xy_bounds, plot_settings, use_facecolor=None):
 
     figwidth = plot_settings["figwidth"]
     figheight = plot_settings["figheight"]
-    figheight_figwidth_ratio = figheight / figwidth
     fig = plt.figure(figsize=(figwidth, figheight))
 
     pad_left = plot_settings["pad_left"]
@@ -449,11 +532,6 @@ def bin_and_profile_1D(x_data, y_data, n_bins, x_bounds,
     x_min, x_max = x_bounds
 
     # Binning of the x axis
-    # x_bin_width = (x_max - x_min) / float(n_bins)
-    # x_bin_limits = np.linspace(x_min, x_max, n_bins + 1)
-    # x_bin_centres = np.linspace(x_min + 0.5 * x_bin_width, x_max - 0.5 * x_bin_width, n_bins)
-    # x_bin_indices = np.digitize(x_data, x_bin_limits, right=False) - 1
-
     x_bin_width = (x_max - x_min) / float(n_bins)
     x_bin_limits_inner = np.linspace(x_min + 0.5 * x_bin_width, x_max - 0.5 * x_bin_width, n_bins)
     x_bin_limits = np.array([x_min] + list(x_bin_limits_inner) + [x_max])
@@ -495,11 +573,6 @@ def bin_and_profile_1D(x_data, y_data, n_bins, x_bounds,
     for y_values_index in range(y_values.shape[0]):
             if not y_val_is_set[y_values_index]:
                 y_values[y_values_index] = y_fill_value
-
-    # # Fill array x_values
-    # x_values = np.zeros(n_bins)
-    # for x_bin_index, x_bin_centre in enumerate(x_bin_centres):
-    #     x_values[x_bin_index] = x_bin_centre
 
     return x_bin_centres, y_values
 
@@ -609,20 +682,22 @@ def bin_and_profile_2D(x_data, y_data, z_data, n_bins, xy_bounds,
 
 
 
-def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray, 
-                    x_label: str, n_bins: tuple, x_bounds = None, 
-                    confidence_levels = [], y_fill_value = -1*_FLOAT_MAX, 
+def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
+                    x_label: str, n_bins: tuple, x_bounds = None,
+                    confidence_levels = None, y_fill_value = -1*_FLOAT_MAX,
                     y_is_loglike = True, plot_likelihood_ratio = True, reverse_sort = False,
                     add_max_likelihood_marker = True, fill_color_below_graph = True, 
                     shaded_confidence_interval_bands=True,
                     plot_settings = gambit_plot_settings.plot_settings,
                     return_plot_details = False,
-                    graph_coordinates_output_file=None) -> None:
+                    graph_coordinates_output_file=None) -> tuple:
 
     # Make local copies
     x_data = np.copy(x_data)
     y_data = np.copy(y_data)
     x_bounds = list(x_bounds) if x_bounds is not None else None
+    if confidence_levels is None:
+        confidence_levels = []
 
     # Sanity checks
     if not (x_data.shape == y_data.shape):
@@ -630,9 +705,6 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
 
     if not (len(x_data.shape) == len(y_data.shape) == 1):
         raise Exception("Input arrays must be one-dimensional.")
-
-    # Number of points
-    n_pts = x_data.shape[0]
 
     # Sort data according to y value, from highest to lowest
     if reverse_sort:
@@ -702,7 +774,6 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
     plt.yticks(fontsize=fontsize)
 
     # Determine confidence level lines
-    cl_lines_y_vals = []
     if len(confidence_levels) > 0:
         cl_lines_y_vals = []
         if (y_is_loglike) and (not plot_likelihood_ratio):
@@ -797,22 +868,14 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
 
     # Draw confidence level lines
     if len(confidence_levels) > 0:
-
-        linewidths = cycle(list(plot_settings["contour_linewidths"]))
-
-        for i,cl in enumerate(confidence_levels):
-            cl_line_y_val = cl_lines_y_vals[i]
-            ax.plot([x_min, x_max], [cl_line_y_val, cl_line_y_val], color=plot_settings["1D_profile_likelihood_color"], linewidth=next(linewidths), linestyle=plot_settings["confidence_level_linestyle"])
-            cl_text = f"${100*cl:.1f}\\%\\,$CL"
-            ax.text(plot_settings["cl_label_x_offset"], cl_line_y_val, cl_text, ha=plot_settings["cl_label_ha"], va=plot_settings["cl_label_va"], fontsize=plot_settings["header_fontsize"],
-                    color=plot_settings["1D_profile_likelihood_color"], transform=ax.transAxes)
+        _draw_threshold_lines(ax, x_min, x_max, confidence_levels, cl_lines_y_vals,
+                              plot_settings["1D_profile_likelihood_color"], "CL", plot_settings)
 
     # Add a star at the max-likelihood point
     if (y_is_loglike and add_max_likelihood_marker):
         max_like_index = np.argmax(y_data)
         x_max_like = x_data[max_like_index]
-        ax.scatter(x_max_like, 0.0, marker=plot_settings["max_likelihood_marker"], s=plot_settings["max_likelihood_marker_size"], c=plot_settings["max_likelihood_marker_color"],
-                   edgecolor=plot_settings["max_likelihood_marker_edgecolor"], linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100, clip_on=False)
+        _plot_marker(ax, x_max_like, 0.0, "max_likelihood", plot_settings)
         plot_details["max_like_coordinate"] = x_max_like
 
     # Return plot
@@ -824,13 +887,13 @@ def plot_1D_profile(x_data: np.ndarray, y_data: np.ndarray,
 
 def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
                        x_label: str, n_bins: tuple, x_bounds = None,
-                       confidence_levels = [], y_fill_value = _FLOAT_MAX,
+                       confidence_levels = None, y_fill_value = _FLOAT_MAX,
                        y_data_is_chi2 = True, reverse_sort = False,
                        add_best_fit_marker = True, fill_color_below_graph = True,
                        shaded_confidence_interval_bands=True,
                        plot_settings = gambit_plot_settings.plot_settings,
                        return_plot_details = False,
-                       graph_coordinates_output_file=None) -> None:
+                       graph_coordinates_output_file=None) -> tuple:
 
     from scipy.interpolate import interp1d
 
@@ -838,6 +901,8 @@ def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
     x_data = np.copy(x_data)
     y_data = np.copy(y_data)
     x_bounds = list(x_bounds) if x_bounds is not None else None
+    if confidence_levels is None:
+        confidence_levels = []
 
     # Sanity checks
     if not (x_data.shape == y_data.shape):
@@ -845,9 +910,6 @@ def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
 
     if not (len(x_data.shape) == len(y_data.shape) == 1):
         raise Exception("Input arrays must be one-dimensional.")
-
-    # Number of points
-    n_pts = x_data.shape[0]
 
     # Convert from log-likelihood to chi^2 if needed
     if not y_data_is_chi2:
@@ -958,22 +1020,14 @@ def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
 
     # Draw confidence level lines
     if len(confidence_levels) > 0:
-
-        linewidths = cycle(list(plot_settings["contour_linewidths"]))
-
-        for i,cl in enumerate(confidence_levels):
-            cl_line_y_val = cl_lines_y_vals[i]
-            ax.plot([x_min, x_max], [cl_line_y_val, cl_line_y_val], color=plot_settings["1D_profile_likelihood_color"], linewidth=next(linewidths), linestyle=plot_settings["confidence_level_linestyle"])
-            cl_text = f"${100*cl:.1f}\\%\\,$CL"
-            ax.text(plot_settings["cl_label_x_offset"], cl_line_y_val, cl_text, ha=plot_settings["cl_label_ha"], va=plot_settings["cl_label_va"], fontsize=plot_settings["header_fontsize"],
-                    color=plot_settings["1D_profile_likelihood_color"], transform=ax.transAxes)
+        _draw_threshold_lines(ax, x_min, x_max, confidence_levels, cl_lines_y_vals,
+                              plot_settings["1D_profile_likelihood_color"], "CL", plot_settings)
 
     # Add a star at the best-fit point (delta chi^2 = 0)
     if add_best_fit_marker:
         min_chi2_index = np.argmin(y_data)
         x_best_fit = x_data[min_chi2_index]
-        ax.scatter(x_best_fit, 0.0, marker=plot_settings["max_likelihood_marker"], s=plot_settings["max_likelihood_marker_size"], c=plot_settings["max_likelihood_marker_color"],
-                   edgecolor=plot_settings["max_likelihood_marker_edgecolor"], linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100, clip_on=False)
+        _plot_marker(ax, x_best_fit, 0.0, "max_likelihood", plot_settings)
         plot_details["best_fit_coordinate"] = x_best_fit
 
     # Return plot
@@ -985,14 +1039,14 @@ def plot_1D_delta_chi2(x_data: np.ndarray, y_data: np.ndarray,
 
 def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray, 
                     labels: tuple, n_bins: tuple, xy_bounds = None, z_bounds = None,
-                    contour_levels = [], contour_coordinates_output_file = None,
+                    contour_levels = None, contour_coordinates_output_file = None,
                     z_is_loglike = True, plot_likelihood_ratio = True, reverse_sort = False,
                     add_max_likelihood_marker = True,
                     color_data: np.ndarray = None, color_label: str = None, 
                     color_bounds = None, color_z_condition = None,
                     missing_value_color= None,
                     log_scale_colorbar: bool = False,
-                    plot_settings = gambit_plot_settings.plot_settings) -> None:
+                    plot_settings = gambit_plot_settings.plot_settings) -> tuple:
 
     # Make local copies
     x_data = np.copy(x_data)
@@ -1015,9 +1069,6 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
         if not (len(color_data.shape) == 1):
             raise Exception("Input array color_data must be one-dimensional.")
 
-    # Number of points
-    n_pts = x_data.shape[0]
-
     # Sort data according to z value, from highest to lowest
     if reverse_sort:
         p = np.argsort(-1.0 * z_data)
@@ -1039,10 +1090,7 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     # Get plot bounds in x and y
     if xy_bounds is None:
         xy_bounds = ([np.min(x_data), np.max(x_data)], [np.min(y_data), np.max(y_data)]) # Use sorted data for bounds if not provided
-    xy_bounds[0][0] -= _FLOAT_EPS
-    xy_bounds[0][1] += _FLOAT_EPS
-    xy_bounds[1][0] -= _FLOAT_EPS
-    xy_bounds[1][1] += _FLOAT_EPS
+    _expand_2D_bounds(xy_bounds)
     x_min, x_max = xy_bounds[0]
     y_min, y_max = xy_bounds[1]
 
@@ -1164,7 +1212,7 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
                              linestyles=list(plot_settings["contour_linestyles"]))
 
         # Save contour coordinates to file?
-        if contour_coordinates_output_file != None:
+        if contour_coordinates_output_file is not None:
             header = "# x,y coordinates for profile likelihood contours at the likelihood ratio values " + ", ".join([f"{l:.4e}" for l in contour_levels]) + ". Sets of coordinates for individual closed contours are separated by nan entries."
             save_contour_coordinates(contour, contour_coordinates_output_file, header=header)
 
@@ -1172,46 +1220,20 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
     if (z_is_loglike and add_max_likelihood_marker):
         x_max_like = x_data[0] # x_data has already been sorted according to z_data
         y_max_like = y_data[0] # y_data has already been sorted according to z_data
-        ax.scatter(x_max_like, y_max_like, marker=plot_settings["max_likelihood_marker"], 
-                   s=plot_settings["max_likelihood_marker_size"], 
-                   c=plot_settings["max_likelihood_marker_color"],
-                   edgecolor=plot_settings["max_likelihood_marker_edgecolor"], 
-                   linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100)
+        _plot_marker(ax, x_max_like, y_max_like, "max_likelihood", plot_settings)
 
     # Add a colorbar
-    cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"], height=plot_settings["colorbar_height"], 
-                         loc=plot_settings["colorbar_loc"], borderpad=plot_settings["colorbar_borderpad"])
-    cbar = fig.colorbar(im, cax=cbar_ax, orientation=plot_settings["colorbar_orientation"])
-
-    cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
-    cbar.outline.set_linewidth(plot_settings["framewidth"])
-
-    if log_scale_colorbar:
-        cbar.locator = matplotlib.ticker.LogLocator()
-        cbar.update_ticks()
-    else:
-        cbar.set_ticks(np.linspace(color_plot_bounds[0], color_plot_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
-        minor_tick_values = np.linspace(color_plot_bounds[0], color_plot_bounds[1], plot_settings["colorbar_n_minor_ticks"])
-        cbar.set_ticks(minor_tick_values[(minor_tick_values >= color_plot_bounds[0]) & (minor_tick_values <= color_plot_bounds[1])], minor=True)
-
-    cbar.ax.tick_params(which="major", labelsize=fontsize - plot_settings["colorbar_tick_label_fontsize_offset"], direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
-    cbar.ax.tick_params(which="minor", labelsize=fontsize - plot_settings["colorbar_tick_label_fontsize_offset"], direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
-
-    # Determine colorbar label
     cbar_label = ""
     if color_data is None:
-        cbar_label = labels[2] # Default z-axis label
-        if (z_is_loglike) and (not plot_likelihood_ratio):
+        cbar_label = labels[2]
+        if z_is_loglike and not plot_likelihood_ratio:
             cbar_label = r"$\ln L   - \ln L_{\mathrm{max}}$"
-        if (z_is_loglike) and (plot_likelihood_ratio):
+        if z_is_loglike and plot_likelihood_ratio:
             cbar_label = r"Profile likelihood ratio $\Lambda = L/L_{\mathrm{max}}$"
     else:
-        if color_label is None:
-            cbar_label = "[Missing label]"
-        else:
-            cbar_label = color_label
-            
-    cbar.set_label(cbar_label, fontsize=plot_settings["colorbar_label_fontsize"], labelpad=plot_settings["colorbar_label_pad"], rotation=plot_settings["colorbar_label_rotation"])
+        cbar_label = color_label if color_label is not None else "[Missing label]"
+    cbar_ax, _ = _setup_colorbar(fig, ax, im, color_plot_bounds, log_scale_colorbar,
+                                  cbar_label, fontsize, plot_settings)
 
     # Return plot
     return fig, ax, cbar_ax
@@ -1220,7 +1242,7 @@ def plot_2D_profile(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray,
 
 def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z_data: np.ndarray, 
                                        labels: tuple, n_bins: tuple, xy_bounds=None, 
-                                       z_bounds=None, confidence_levels=[],
+                                       z_bounds=None, confidence_levels=None,
                                        draw_interval_limits=True,
                                        draw_interval_connectors=True,
                                        add_max_likelihood_marker=True,
@@ -1235,6 +1257,8 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
     y_data = np.copy(y_data)
     z_data = np.copy(z_data)
     xy_bounds = [list(xy_bounds[0]), list(xy_bounds[1])] if xy_bounds is not None else None
+    if confidence_levels is None:
+        confidence_levels = []
 
     # This function only works for profile likelihood ratio plots
     z_is_loglike = True
@@ -1265,10 +1289,7 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
         y_min_data, y_max_data = np.min(y_data), np.max(y_data)
         xy_bounds = ([x_min_data, x_max_data], [y_min_data, y_max_data])
 
-    xy_bounds[0][0] -= _FLOAT_EPS
-    xy_bounds[0][1] += _FLOAT_EPS
-    xy_bounds[1][0] -= _FLOAT_EPS
-    xy_bounds[1][1] += _FLOAT_EPS
+    _expand_2D_bounds(xy_bounds)
     x_min, x_max = xy_bounds[0]
     y_min, y_max = xy_bounds[1]
 
@@ -1293,17 +1314,7 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
         current_x_min = x_bin_limits[i]
         current_x_max = x_bin_limits[i+1]
 
-        if x_condition == "bin":
-            if i == n_bins[0] - 1: # Handle the right edge of the last bin
-                mask = (x_data >= current_x_min) & (x_data <= current_x_max)
-            else:
-                mask = (x_data >= current_x_min) & (x_data < current_x_max)
-
-        elif x_condition == "upperbound":
-            mask = (x_data <= current_x_max)
-
-        elif x_condition == "lowerbound":
-            mask = (x_data >= current_x_min)
+        mask = _x_condition_mask(x_data, x_bin_limits, i, n_bins[0], x_condition)
 
         # x_subset = x_data[mask]
         y_subset = y_data[mask]
@@ -1432,8 +1443,7 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
 
         if add_max_likelihood_marker and not np.isnan(max_likelihood_coordinates[i]):
             max_like_y_coord = max_likelihood_coordinates[i]
-            ax.scatter(current_x_bin_centre, max_like_y_coord, marker=plot_settings["max_likelihood_marker"], s=plot_settings["max_likelihood_marker_size"], c=plot_settings["max_likelihood_marker_color"],
-                       edgecolor=plot_settings["max_likelihood_marker_edgecolor"], linewidth=plot_settings["max_likelihood_marker_linewidth"], zorder=100, clip_on=False)
+            _plot_marker(ax, current_x_bin_centre, max_like_y_coord, "max_likelihood", plot_settings)
 
         # Add vertical separators
         if i > 0:
@@ -1462,44 +1472,15 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
     if shaded_confidence_interval_bands:
         cbar_ax = None
     else:
-        cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"], height=plot_settings["colorbar_height"],
-                             loc=plot_settings["colorbar_loc"], borderpad=plot_settings["colorbar_borderpad"])
-        cbar = fig.colorbar(im, cax=cbar_ax, orientation=plot_settings["colorbar_orientation"])
-        cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
-        cbar.outline.set_linewidth(plot_settings["framewidth"])
-
-        if log_scale_colorbar:
-            cbar.locator = matplotlib.ticker.LogLocator()
-            cbar.update_ticks()
-        else:
-            cbar.set_ticks(np.linspace(z_bounds[0], z_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
-            minor_tick_values = np.linspace(z_bounds[0], z_bounds[1], plot_settings["colorbar_n_minor_ticks"])
-            cbar.set_ticks(minor_tick_values[(minor_tick_values >= z_bounds[0]) & (minor_tick_values <= z_bounds[1])], minor=True)
-
-        cbar.ax.tick_params(which="major", labelsize=fontsize - 3, direction="in",
-                            color=plot_settings["colorbar_major_ticks_color"],
-                            width=plot_settings["colorbar_major_ticks_width"],
-                            length=plot_settings["colorbar_major_ticks_length"],
-                            pad=plot_settings["colorbar_major_ticks_pad"])
-        cbar.ax.tick_params(which="minor", labelsize=fontsize - 3, direction="in",
-                            color=plot_settings["colorbar_minor_ticks_color"],
-                            width=plot_settings["colorbar_minor_ticks_width"],
-                            length=plot_settings["colorbar_minor_ticks_length"],
-                            pad=plot_settings["colorbar_minor_ticks_pad"])
-
+        cbar_label_text = "Profile likelihood"
         if len(labels) > 2:
             cbar_label_text = labels[2]
-        else:
-            cbar_label_text = "Profile likelihood" # Default
-
         if z_is_loglike and not plot_likelihood_ratio:
             cbar_label_text = r"$\ln L - \ln L_{\mathrm{max}}$"
         elif z_is_loglike and plot_likelihood_ratio:
             cbar_label_text = r"Profile likelihood ratio $\Lambda = L/L_{\mathrm{max}}$"
-
-        cbar.set_label(cbar_label_text, fontsize=plot_settings["colorbar_label_fontsize"],
-                       labelpad=plot_settings["colorbar_label_pad"],
-                       rotation=plot_settings["colorbar_label_rotation"])
+        cbar_ax, _ = _setup_colorbar(fig, ax, im, z_bounds, log_scale_colorbar,
+                                      cbar_label_text, fontsize, plot_settings)
 
     # Return plot objects
     return fig, ax, cbar_ax
@@ -1509,7 +1490,7 @@ def plot_conditional_profile_intervals(x_data: np.ndarray, y_data: np.ndarray, z
 def plot_conditional_credible_intervals(
     x_data: np.ndarray, y_data: np.ndarray, posterior_weights: np.ndarray,
     labels: tuple, n_bins: tuple, xy_bounds=None,
-    credible_regions=[],
+    credible_regions=None,
     draw_interval_connectors=True,
     draw_interval_limits=True,
     add_mean_posterior_marker=True,
@@ -1522,6 +1503,8 @@ def plot_conditional_credible_intervals(
 
     # Make local copies
     xy_bounds = [list(xy_bounds[0]), list(xy_bounds[1])] if xy_bounds is not None else None
+    if credible_regions is None:
+        credible_regions = []
 
     cbar_ax_to_return = None
 
@@ -1536,10 +1519,7 @@ def plot_conditional_credible_intervals(
         y_min_data, y_max_data = np.min(y_data), np.max(y_data)
         xy_bounds = ([x_min_data, x_max_data], [y_min_data, y_max_data])
 
-    xy_bounds[0][0] -= _FLOAT_EPS
-    xy_bounds[0][1] += _FLOAT_EPS
-    xy_bounds[1][0] -= _FLOAT_EPS
-    xy_bounds[1][1] += _FLOAT_EPS
+    _expand_2D_bounds(xy_bounds)
     x_min, x_max = xy_bounds[0]
     y_min, y_max = xy_bounds[1]
 
@@ -1564,15 +1544,7 @@ def plot_conditional_credible_intervals(
         current_x_min = x_bin_limits[i]
         current_x_max = x_bin_limits[i+1]
 
-        if x_condition == "bin":
-            if i == n_bins[0] - 1: # Handle the right edge of the last bin
-                mask = (x_data >= current_x_min) & (x_data <= current_x_max)
-            else:
-                mask = (x_data >= current_x_min) & (x_data < current_x_max)
-        elif x_condition == "upperbound":
-            mask = (x_data <= current_x_max)
-        elif x_condition == "lowerbound":
-            mask = (x_data >= current_x_min)
+        mask = _x_condition_mask(x_data, x_bin_limits, i, n_bins[0], x_condition)
 
         y_subset = y_data[mask]
         posterior_weights_subset = posterior_weights[mask]
@@ -1718,23 +1690,11 @@ def plot_conditional_credible_intervals(
 
         if add_mean_posterior_marker and not np.isnan(mean_posterior_coordinates[i]):
             mean_post_y_coord = mean_posterior_coordinates[i]
-            ax.scatter(current_x_bin_centre, mean_post_y_coord,
-                       marker=plot_settings["posterior_mean_marker"],
-                       s=plot_settings["posterior_mean_marker_size"],
-                       c=plot_settings["posterior_mean_marker_color"],
-                       edgecolor=plot_settings["posterior_mean_marker_edgecolor"],
-                       linewidth=plot_settings["posterior_mean_marker_linewidth"],
-                       zorder=100, clip_on=False)
+            _plot_marker(ax, current_x_bin_centre, mean_post_y_coord, "posterior_mean", plot_settings)
 
         if add_max_posterior_marker and not np.isnan(max_posterior_coordinates[i]):
             max_post_y_coord = max_posterior_coordinates[i]
-            ax.scatter(current_x_bin_centre, max_post_y_coord,
-                       marker=plot_settings["posterior_max_marker"],
-                       s=plot_settings["posterior_max_marker_size"],
-                       c=plot_settings["posterior_max_marker_color"],
-                       edgecolor=plot_settings["posterior_max_marker_edgecolor"],
-                       linewidth=plot_settings["posterior_max_marker_linewidth"],
-                       zorder=100, clip_on=False)
+            _plot_marker(ax, current_x_bin_centre, max_post_y_coord, "posterior_max", plot_settings)
 
         # Add vertical separators
         if i > 0:
@@ -1761,36 +1721,9 @@ def plot_conditional_credible_intervals(
 
     # Add colorbar
     if not shaded_credible_region_bands:
-        cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"], height=plot_settings["colorbar_height"],
-                             loc=plot_settings["colorbar_loc"], borderpad=plot_settings["colorbar_borderpad"])
-        cbar = fig.colorbar(im, cax=cbar_ax, orientation=plot_settings["colorbar_orientation"])
-        cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
-        cbar.outline.set_linewidth(plot_settings["framewidth"])
-
-        # Use posterior_prob_bounds for ticks
-        if log_scale_colorbar:
-            cbar.locator = matplotlib.ticker.LogLocator()
-            cbar.update_ticks()
-        else:
-            cbar.set_ticks(np.linspace(posterior_prob_bounds[0], posterior_prob_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
-            minor_tick_values = np.linspace(posterior_prob_bounds[0], posterior_prob_bounds[1], plot_settings["colorbar_n_minor_ticks"])
-            cbar.set_ticks(minor_tick_values[(minor_tick_values >= posterior_prob_bounds[0]) & (minor_tick_values <= posterior_prob_bounds[1])], minor=True)
-
-        cbar.ax.tick_params(which="major", labelsize=fontsize - 3, direction="in",
-                            color=plot_settings["colorbar_major_ticks_color"],
-                            width=plot_settings["colorbar_major_ticks_width"],
-                            length=plot_settings["colorbar_major_ticks_length"],
-                            pad=plot_settings["colorbar_major_ticks_pad"])
-        cbar.ax.tick_params(which="minor", labelsize=fontsize - 3, direction="in",
-                            color=plot_settings["colorbar_minor_ticks_color"],
-                            width=plot_settings["colorbar_minor_ticks_width"],
-                            length=plot_settings["colorbar_minor_ticks_length"],
-                            pad=plot_settings["colorbar_minor_ticks_pad"])
-
         cbar_label_text = r"Relative probability $P/P_{\mathrm{max}}$"
-        cbar.set_label(cbar_label_text, fontsize=plot_settings["colorbar_label_fontsize"],
-                       labelpad=plot_settings["colorbar_label_pad"],
-                       rotation=plot_settings["colorbar_label_rotation"])
+        cbar_ax, _ = _setup_colorbar(fig, ax, im, posterior_prob_bounds, log_scale_colorbar,
+                                      cbar_label_text, fontsize, plot_settings)
         cbar_ax_to_return = cbar_ax
 
     # Return plot objects
@@ -1799,18 +1732,20 @@ def plot_conditional_credible_intervals(
 
 
 def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
-                      x_label: str, n_bins: tuple, x_bounds = None, 
-                      credible_regions = [], plot_relative_probability = True, 
+                      x_label: str, n_bins: tuple, x_bounds = None,
+                      credible_regions = None, plot_relative_probability = True,
                       add_mean_posterior_marker = True,
                       add_max_posterior_marker = True,
                       fill_color_below_graph=False,
                       shaded_credible_region_bands = True,
                       plot_settings = gambit_plot_settings.plot_settings,
                       return_plot_details = False,
-                      graph_coordinates_output_file=None) -> None:
+                      graph_coordinates_output_file=None) -> tuple:
 
     # Make local copies
     x_bounds = list(x_bounds) if x_bounds is not None else None
+    if credible_regions is None:
+        credible_regions = []
 
     # Initialize plot_details dict
     if return_plot_details:
@@ -1822,9 +1757,6 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
 
     if not (len(x_data.shape) == len(posterior_weights.shape) == 1):
         raise Exception("Input arrays must be one-dimensional.")
-
-    # Number of points
-    n_pts = x_data.shape[0]
 
     # Get plot bounds in x
     if x_bounds is None:
@@ -1904,9 +1836,14 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
             if return_plot_details:
                 plot_details["cl_lines_y_vals"].append(line_y_val)
 
-            ax.plot([x_min, x_max], [line_y_val, line_y_val], color=plot_settings["1D_posterior_color"], linewidth=next(linewidths), linestyle=plot_settings["credible_region_linestyle"])
-            cr_text = f"${100*cr:.1f}\\%\\,$CR"
-            ax.text(plot_settings["cl_label_x_offset"], line_y_val, cr_text, ha=plot_settings["cl_label_ha"], va=plot_settings["cl_label_va"], fontsize=plot_settings["header_fontsize"],
+            ax.plot([x_min, x_max], [line_y_val, line_y_val],
+                    color=plot_settings["1D_posterior_color"],
+                    linewidth=next(linewidths),
+                    linestyle=plot_settings["credible_region_linestyle"])
+            label_text = f"${100 * cr:.1f}\\%\\,$CR"
+            ax.text(plot_settings["cl_label_x_offset"], line_y_val, label_text,
+                    ha=plot_settings["cl_label_ha"], va=plot_settings["cl_label_va"],
+                    fontsize=plot_settings["header_fontsize"],
                     color=plot_settings["1D_posterior_color"], transform=ax.transAxes)
 
             if shaded_credible_region_bands:
@@ -1941,8 +1878,7 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
     if add_mean_posterior_marker:
         x_post_mean_marker = np.average(x_data, weights=posterior_weights)
         y_post_mean_marker = 0.0
-        ax.scatter(x_post_mean_marker, y_post_mean_marker, marker=plot_settings["posterior_mean_marker"], s=plot_settings["posterior_mean_marker_size"], c=plot_settings["posterior_mean_marker_color"],
-                   edgecolor=plot_settings["posterior_mean_marker_edgecolor"], linewidth=plot_settings["posterior_mean_marker_linewidth"], zorder=100, clip_on=False)
+        _plot_marker(ax, x_post_mean_marker, y_post_mean_marker, "posterior_mean", plot_settings)
         # Store mean posterior marker coordinate
         if return_plot_details:
             plot_details["mean_posterior_coordinate"] = x_post_mean_marker
@@ -1951,8 +1887,7 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
     if add_max_posterior_marker:
         x_post_max_marker = x_centers[np.argmax(histogram)]
         y_post_max_marker = 0.0
-        ax.scatter(x_post_max_marker, y_post_max_marker, marker=plot_settings["posterior_max_marker"], s=plot_settings["posterior_max_marker_size"], c=plot_settings["posterior_max_marker_color"],
-                   edgecolor=plot_settings["posterior_max_marker_edgecolor"], linewidth=plot_settings["posterior_max_marker_linewidth"], zorder=100, clip_on=False)
+        _plot_marker(ax, x_post_max_marker, y_post_max_marker, "posterior_max", plot_settings)
         # Store max posterior marker coordinate
         if return_plot_details:
             plot_details["max_posterior_coordinate"] = x_post_max_marker
@@ -1966,8 +1901,8 @@ def plot_1D_posterior(x_data: np.ndarray, posterior_weights: np.ndarray,
 
 
 def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights: np.ndarray, 
-                      labels: tuple, n_bins: tuple, xy_bounds = None, 
-                      credible_regions = [], 
+                      labels: tuple, n_bins: tuple, xy_bounds = None,
+                      credible_regions = None,
                       contour_coordinates_output_file = None,
                       plot_relative_probability = True, 
                       add_mean_posterior_marker = True,
@@ -1979,10 +1914,12 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
                       color_within_credible_region = None,
                       missing_value_color = None,
                       log_scale_colorbar: bool = False,
-                      plot_settings = gambit_plot_settings.plot_settings) -> None:
+                      plot_settings = gambit_plot_settings.plot_settings) -> tuple:
 
     # Make local copies
     xy_bounds = [list(xy_bounds[0]), list(xy_bounds[1])] if xy_bounds is not None else None
+    if credible_regions is None:
+        credible_regions = []
 
     # Sanity checks
     if not (x_data.shape == y_data.shape == posterior_weights.shape):
@@ -2000,16 +1937,10 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
     if color_point_estimate not in ["mean", "maxpost"]:
         raise Exception("The argument 'color_point_estimate' must be either 'mean' or 'maxpost'.")
 
-    # Number of points
-    n_pts = x_data.shape[0]
-
     # Get plot bounds in x and y
     if xy_bounds is None:
         xy_bounds = ([np.min(x_data), np.max(x_data)], [np.min(y_data), np.max(y_data)])
-    xy_bounds[0][0] -= _FLOAT_EPS
-    xy_bounds[0][1] += _FLOAT_EPS
-    xy_bounds[1][0] -= _FLOAT_EPS
-    xy_bounds[1][1] += _FLOAT_EPS
+    _expand_2D_bounds(xy_bounds)
     x_min, x_max = xy_bounds[0]
     y_min, y_max = xy_bounds[1]
 
@@ -2156,7 +2087,7 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
                                  linewidths=plot_settings["contour_linewidths"], linestyles=plot_settings["contour_linestyles"])
 
             # Save contour coordinates to file?
-            if contour_coordinates_output_file != None:
+            if contour_coordinates_output_file is not None:
                 header = "# x,y coordinates for contours corresponding to the "  + ", ".join([f"{cr:.4e}" for cr in credible_regions]) + " credible regions. Sets of coordinates for individual closed contours are separated by nan entries."
                 save_contour_coordinates(contour, contour_coordinates_output_file, header=header)
 
@@ -2164,47 +2095,22 @@ def plot_2D_posterior(x_data: np.ndarray, y_data: np.ndarray, posterior_weights:
     if add_mean_posterior_marker:
         x_mean = np.average(x_data, weights=posterior_weights)
         y_mean = np.average(y_data, weights=posterior_weights)
-        ax.scatter(x_mean, y_mean, marker=plot_settings["posterior_mean_marker"], s=plot_settings["posterior_mean_marker_size"], c=plot_settings["posterior_mean_marker_color"],
-                   edgecolor=plot_settings["posterior_mean_marker_edgecolor"], linewidth=plot_settings["posterior_mean_marker_linewidth"], zorder=100)
+        _plot_marker(ax, x_mean, y_mean, "posterior_mean", plot_settings)
 
     # Add a colorbar
-    cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"], height=plot_settings["colorbar_height"], loc=plot_settings["colorbar_loc"], borderpad=plot_settings["colorbar_borderpad"])
-    cbar = fig.colorbar(im, cax=cbar_ax, orientation=plot_settings["colorbar_orientation"])
-
-    cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
-    cbar.outline.set_linewidth(plot_settings["framewidth"])
-
-    if log_scale_colorbar:
-        cbar.locator = matplotlib.ticker.LogLocator()
-        cbar.update_ticks()
-    else:
-        cbar.set_ticks(np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_major_ticks"]), minor=False)
-        # Ensure minor ticks are within the bounds
-        minor_tick_values = np.linspace(cmap_vmin, cmap_vmax, plot_settings["colorbar_n_minor_ticks"])
-        cbar.set_ticks(minor_tick_values[(minor_tick_values >= cmap_vmin) & (minor_tick_values <= cmap_vmax)], minor=True)
-
-    cbar.ax.tick_params(which="major", labelsize=fontsize - plot_settings["colorbar_tick_label_fontsize_offset"], direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
-    cbar.ax.tick_params(which="minor", labelsize=fontsize - plot_settings["colorbar_tick_label_fontsize_offset"], direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
-
-    # Colorbar label for color_data
     cbar_label_str = ""
     if color_data is not None:
-        if color_label is not None:
-            cbar_label_str = color_label
-        else:
-            cbar_label_str = "[Missing label]"
-
+        cbar_label_str = color_label if color_label is not None else "[Missing label]"
         if color_point_estimate == "mean":
             cbar_label_str = f"{cbar_label_str}, posterior mean"
         elif color_point_estimate == "maxpost":
             cbar_label_str = f"{cbar_label_str}, posterior max"
-
     else:
         cbar_label_str = "Posterior probability"
         if plot_relative_probability:
             cbar_label_str = r"Relative probability $P/P_{\mathrm{max}}$"
-
-    cbar.set_label(cbar_label_str, fontsize=plot_settings["colorbar_label_fontsize"], labelpad=plot_settings["colorbar_label_pad"], rotation=plot_settings["colorbar_label_rotation"])
+    cbar_ax, _ = _setup_colorbar(fig, ax, im, (cmap_vmin, cmap_vmax), log_scale_colorbar,
+                                  cbar_label_str, fontsize, plot_settings)
 
     # Return plot
     return fig, ax, cbar_ax
@@ -2215,7 +2121,7 @@ def plot_2D_scatter(x_data: np.ndarray, y_data: np.ndarray, labels: tuple, xy_bo
                     color_data: np.ndarray = None, color_label: str = None,
                     color_bounds = None,
                     log_scale_colorbar: bool = False,
-                    plot_settings = gambit_plot_settings.plot_settings) -> None:
+                    plot_settings = gambit_plot_settings.plot_settings) -> tuple:
 
     # Make local copies
     x_data = np.copy(x_data)
@@ -2241,9 +2147,6 @@ def plot_2D_scatter(x_data: np.ndarray, y_data: np.ndarray, labels: tuple, xy_bo
     if color_data is not None and not (len(color_data.shape) == 1):
         raise Exception("Input array color_data must be one-dimensional.")
 
-    # Number of points
-    n_pts = x_data.shape[0]
-
     # Sorting data
     # If sort_data is provided, sort all data based on sort_data.
     # If color_data is also provided, it's sorted along with x and y.
@@ -2263,10 +2166,7 @@ def plot_2D_scatter(x_data: np.ndarray, y_data: np.ndarray, labels: tuple, xy_bo
     if xy_bounds is None:
         xy_bounds = ([np.min(x_data), np.max(x_data)], [np.min(y_data), np.max(y_data)])
     # Add epsilon padding to avoid points landing exactly on the boundary
-    xy_bounds[0][0] -= _FLOAT_EPS
-    xy_bounds[0][1] += _FLOAT_EPS
-    xy_bounds[1][0] -= _FLOAT_EPS
-    xy_bounds[1][1] += _FLOAT_EPS
+    _expand_2D_bounds(xy_bounds)
     x_min, x_max = xy_bounds[0]
     y_min, y_max = xy_bounds[1]
 
@@ -2320,25 +2220,8 @@ def plot_2D_scatter(x_data: np.ndarray, y_data: np.ndarray, labels: tuple, xy_bo
     # Add a colorbar if color data was used
     cbar_ax = None
     if color_data is not None:
-        cbar_ax = inset_axes(ax, width=plot_settings["colorbar_width"], height=plot_settings["colorbar_height"],
-                             loc=plot_settings["colorbar_loc"], borderpad=plot_settings["colorbar_borderpad"])
-        cbar = fig.colorbar(im, cax=cbar_ax, orientation=plot_settings["colorbar_orientation"])
-
-        cbar.outline.set_edgecolor(plot_settings["framecolor_colorbar"])
-        cbar.outline.set_linewidth(plot_settings["framewidth"])
-
-        if log_scale_colorbar:
-            cbar.locator = matplotlib.ticker.LogLocator()
-            cbar.update_ticks()
-        elif color_bounds is not None:
-            cbar.set_ticks(np.linspace(color_bounds[0], color_bounds[1], plot_settings["colorbar_n_major_ticks"]), minor=False)
-            minor_tick_values = np.linspace(color_bounds[0], color_bounds[1], plot_settings["colorbar_n_minor_ticks"])
-            cbar.set_ticks(minor_tick_values[(minor_tick_values >= color_bounds[0]) & (minor_tick_values <= color_bounds[1])], minor=True)
-
-        cbar.ax.tick_params(which="major", labelsize=fontsize - plot_settings["colorbar_tick_label_fontsize_offset"], direction="in", color=plot_settings["colorbar_major_ticks_color"], width=plot_settings["colorbar_major_ticks_width"], length=plot_settings["colorbar_major_ticks_length"], pad=plot_settings["colorbar_major_ticks_pad"])
-        cbar.ax.tick_params(which="minor", labelsize=fontsize - plot_settings["colorbar_tick_label_fontsize_offset"], direction="in", color=plot_settings["colorbar_minor_ticks_color"], width=plot_settings["colorbar_minor_ticks_width"], length=plot_settings["colorbar_minor_ticks_length"], pad=plot_settings["colorbar_minor_ticks_pad"])
-
-        cbar.set_label(color_label, fontsize=plot_settings["colorbar_label_fontsize"], labelpad=plot_settings["colorbar_label_pad"], rotation=plot_settings["colorbar_label_rotation"])
+        cbar_ax, _ = _setup_colorbar(fig, ax, im, color_bounds, log_scale_colorbar,
+                                      color_label, fontsize, plot_settings)
 
     # Return plot
     return fig, ax, cbar_ax
@@ -2374,7 +2257,7 @@ def nearest_neighbor_averaging(hdf5_file_and_group_names, target_dataset, NN_ins
     X = np.array([data[par_name] for par_name in shorthand_param_names]).T
 
     # Scale the input coordinates before doing the nearest-neighbors search?
-    if scaler != None:
+    if scaler is not None:
         X = scaler.fit_transform(X)
 
     # Now do the nearest-neighbors search
